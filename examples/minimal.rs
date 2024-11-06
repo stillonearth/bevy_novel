@@ -27,7 +27,7 @@ fn load_scenario(path: String) -> Vec<AST> {
     let l = &mut Lexer::new(blocks.clone(), true);
 
     let (ast, _) = parse_block(l);
-    return ast;
+    ast
 }
 
 fn start_visual_novel(mut ew_start_scenario: EventWriter<EventStartScenario>) {

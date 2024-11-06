@@ -91,7 +91,7 @@ fn handle_start_scenario(
 }
 
 fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
-    for (_, ast) in ast.iter().enumerate() {
+    for ast in ast.iter() {
         let ast_index = match ast {
             AST::Return(i, _) => *i,
             AST::Jump(i, _, _) => *i,
@@ -146,7 +146,7 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
         }
     }
 
-    return indices;
+    indices
 }
 
 fn handle_switch_next_node(
@@ -154,41 +154,45 @@ fn handle_switch_next_node(
     mut er_event_switch_next_node: EventReader<EventSwitchNextNode>,
     mut ew_handle_node: EventWriter<EventHandleNode>,
 ) {
+    let mut switched = false;
+
     for _ in er_event_switch_next_node.read() {
-        let current_index = novel_data.current_index;
+        while !switched {
+            let current_index = novel_data.current_index;
 
-        let next_index = current_index + 1;
-        let indices = list_ast_indices(novel_data.ast.clone());
-        let max_index = *indices.iter().max().unwrap_or(&0);
-        if next_index > max_index {
-            return;
-        }
+            let next_index = current_index + 1;
+            let indices = list_ast_indices(novel_data.ast.clone());
+            let max_index = *indices.iter().max().unwrap_or(&0);
+            if next_index > max_index {
+                switched = true;
+                continue;
+            }
 
-        novel_data.current_index = next_index;
+            novel_data.current_index = next_index;
 
-        // find next node in root element
-        let next_element = find_element_with_index(novel_data.ast.clone(), next_index);
-        if next_element.is_some() {
-            ew_handle_node.send(EventHandleNode {
-                ast: next_element.unwrap().clone(),
-            });
-            return;
-        }
-
-        for node in novel_data.ast.clone() {
-            let next_element: Option<AST> = match node {
-                AST::Label(_, _, label_ast, _) => {
-                    find_element_with_index(label_ast.clone(), next_index)
-                }
-                _ => None,
-            };
-
+            let next_element = find_element_with_index(novel_data.ast.clone(), next_index);
             if next_element.is_some() {
-                if next_element.is_some() {
+                ew_handle_node.send(EventHandleNode {
+                    ast: next_element.unwrap().clone(),
+                });
+                switched = true;
+                continue;
+            }
+
+            for node in novel_data.ast.clone() {
+                let next_element: Option<AST> = match node {
+                    AST::Label(_, _, label_ast, _) => {
+                        find_element_with_index(label_ast.clone(), next_index)
+                    }
+                    _ => None,
+                };
+
+                if next_element.is_some() && next_element.is_some() {
                     ew_handle_node.send(EventHandleNode {
                         ast: next_element.unwrap().clone(),
                     });
-                    return;
+                    switched = true;
+                    continue;
                 }
             }
         }
@@ -196,31 +200,35 @@ fn handle_switch_next_node(
     // find element with required index
 }
 
-fn handle_new_node(mut _commands: Commands, mut er_handle_node: EventReader<EventHandleNode>) {
+fn handle_new_node(
+    mut _commands: Commands,
+    mut er_handle_node: EventReader<EventHandleNode>,
+    mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
+) {
     for event in er_handle_node.read() {
         println!("{:?}", event.ast);
 
         match event.ast.clone() {
             AST::Return(_, _) => {
-                println!("handle return");
+                println!("Over");
             }
             AST::Jump(_, _, _) => {
-                println!("handle jump");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Scene(_, _, _) => {
-                println!("handle scene");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, _) => {
-                println!("handle show");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Hide(_, _) => {
-                println!("handle hide");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Label(_, _, _, _) => {
-                println!("handle label");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Init(_, _, _) => {
-                println!("handle init");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::UserStatement(_, _) => {
                 println!("handle user statement");
@@ -237,6 +245,7 @@ fn handle_press_key(
     mut ew_switch_next_node: EventWriter<EventSwitchNextNode>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
+        println!("handle_press_key");
         ew_switch_next_node.send(EventSwitchNextNode {});
     }
 }
