@@ -29,6 +29,7 @@ impl Plugin for NovelPlugin {
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
+                    handle_press_key,
                 ),
             )
             .add_event::<EventShow>()
@@ -118,10 +119,6 @@ fn handle_switch_next_node(
     mut novel_data: ResMut<NovelData>,
     mut er_event_switch_next_node: EventReader<EventSwitchNextNode>,
     mut ew_handle_node: EventWriter<EventHandleNode>,
-    // mut ew_show: EventWriter<EventShow>,
-    // mut ew_jump: EventWriter<EventJump>,
-    // mut ew_return: EventWriter<EventReturn>,
-    // mut ew_say: EventWriter<EventSay>,
 ) {
     for _ in er_event_switch_next_node.read() {
         let current_index = novel_data.current_index;
@@ -181,11 +178,7 @@ fn handle_switch_next_node(
     // find element with required index
 }
 
-fn handle_new_node(
-    mut commands: Commands,
-    novel_data: ResMut<NovelData>,
-    mut er_handle_node: EventReader<EventHandleNode>,
-) {
+fn handle_new_node(mut _commands: Commands, mut er_handle_node: EventReader<EventHandleNode>) {
     for event in er_handle_node.read() {
         match event.ast.clone() {
             AST::Return(_, _) => {
@@ -216,5 +209,14 @@ fn handle_new_node(
                 println!("handle unknown");
             }
         }
+    }
+}
+
+fn handle_press_key(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut ew_switch_next_node: EventWriter<EventSwitchNextNode>,
+) {
+    if keys.just_pressed(KeyCode::Space) {
+        ew_switch_next_node.send(EventSwitchNextNode {});
     }
 }
