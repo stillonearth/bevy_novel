@@ -5,7 +5,7 @@ label start:
     
 label chapter1_1:
 
-    scene window blinds
+    scene background
     play music "Destiny.mp3"
 
     "Hej, jag heter Character 1 och jag är en karaktär i det här spelet."

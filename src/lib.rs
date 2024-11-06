@@ -1,6 +1,6 @@
 pub mod events;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_lunex::prelude::*;
 use events::*;
 use renpy_parser::parsers::AST;
@@ -10,6 +10,9 @@ struct NovelBackground {}
 
 #[derive(Debug, Component)]
 struct NovelImage;
+
+#[derive(Debug, Component)]
+struct NovelText;
 
 pub struct NovelPlugin;
 
@@ -44,7 +47,7 @@ impl Plugin for NovelPlugin {
     }
 }
 
-fn setup(mut commands: Commands, _assets: Res<AssetServer>) {
+fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands
         .spawn((
             UiTreeBundle::<MainUi> {
@@ -67,8 +70,29 @@ fn setup(mut commands: Commands, _assets: Res<AssetServer>) {
                 UiLayout::solid()
                     .size((Rl(100.0), Rl(100.0)))
                     .pack::<Base>(),
-                // UiImage2dBundle::from(assets.load("background.png")),
+                UiImage2dBundle::from(assets.load("inverted.png")),
                 NovelBackground {},
+            ))
+            .insert(Visibility::Hidden);
+
+            ui.spawn((
+                UiLink::<MainUi>::path("Root/Rectangle/Text"),
+                UiLayout::window()
+                    .pos(Rl((0., 0.)))
+                    .anchor(Anchor::BottomLeft)
+                    .pack::<Base>(),
+                UiText2dBundle {
+                    text: Text::from_section(
+                        "Hello world!",
+                        TextStyle {
+                            font: assets.load("font.ttf"),
+                            font_size: 5.0,
+                            color: Color::WHITE,
+                        },
+                    ),
+                    ..default()
+                },
+                NovelText {},
             ));
 
             ui.spawn((
@@ -201,9 +225,11 @@ fn handle_switch_next_node(
 }
 
 fn handle_new_node(
-    mut _commands: Commands,
+    mut commands: Commands,
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
+    mut q_background: Query<(Entity, &mut Visibility, &mut NovelBackground)>,
+    assets: Res<AssetServer>,
 ) {
     for event in er_handle_node.read() {
         println!("{:?}", event.ast);
@@ -215,7 +241,18 @@ fn handle_new_node(
             AST::Jump(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
-            AST::Scene(_, _, _) => {
+            AST::Scene(_, image, _layer) => {
+                // insert images
+
+                if let Some(img) = image {
+                    for (entity, mut v, _) in q_background.iter_mut() {
+                        let image_name = format!("{}.png", img);
+                        let image: Handle<Image> = assets.load(image_name);
+                        commands.entity(entity).insert(image);
+                        *v = Visibility::Visible;
+                    }
+                }
+
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, _) => {
