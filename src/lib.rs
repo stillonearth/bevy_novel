@@ -115,6 +115,40 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
     None
 }
 
+fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
+    let mut indices: Vec<usize> = ast
+        .iter()
+        .map(|a| match a {
+            AST::Return(i, _) => *i,
+            AST::Jump(i, _, _) => *i,
+            AST::Scene(i, _, _) => *i,
+            AST::Show(i, _) => *i,
+            AST::Hide(i, _) => *i,
+            AST::Label(i, _, _, _) => *i,
+            AST::Init(i, _, _) => *i,
+            AST::Say(i, _, _, _) => *i,
+            AST::UserStatement(i, _) => *i,
+            AST::Error => {
+                todo!()
+            }
+        })
+        .collect();
+
+    for ast in ast {
+        match ast {
+            AST::Label(_, _, vec, _) => {
+                indices.extend_from_slice(list_ast_indices(vec).as_slice());
+            }
+            AST::Init(_, vec, _) => {
+                indices.extend_from_slice(list_ast_indices(vec).as_slice());
+            }
+            _ => {}
+        }
+    }
+
+    return indices;
+}
+
 fn handle_switch_next_node(
     mut novel_data: ResMut<NovelData>,
     mut er_event_switch_next_node: EventReader<EventSwitchNextNode>,
@@ -122,25 +156,9 @@ fn handle_switch_next_node(
 ) {
     for _ in er_event_switch_next_node.read() {
         let current_index = novel_data.current_index;
+
         let next_index = current_index + 1;
-        let indices: Vec<usize> = novel_data
-            .ast
-            .iter()
-            .map(|a| match a {
-                AST::Return(i, _) => *i,
-                AST::Jump(i, _, _) => *i,
-                AST::Scene(i, _, _) => *i,
-                AST::Show(i, _) => *i,
-                AST::Hide(i, _) => *i,
-                AST::Label(i, _, _, _) => *i,
-                AST::Init(i, _, _) => *i,
-                AST::Say(i, _, _, _) => *i,
-                AST::UserStatement(i, _) => *i,
-                AST::Error => {
-                    todo!()
-                }
-            })
-            .collect();
+        let indices = list_ast_indices(novel_data.ast.clone());
         let max_index = *indices.iter().max().unwrap_or(&0);
         if next_index > max_index {
             return;
@@ -180,6 +198,8 @@ fn handle_switch_next_node(
 
 fn handle_new_node(mut _commands: Commands, mut er_handle_node: EventReader<EventHandleNode>) {
     for event in er_handle_node.read() {
+        println!("{:?}", event.ast);
+
         match event.ast.clone() {
             AST::Return(_, _) => {
                 println!("handle return");
@@ -196,10 +216,10 @@ fn handle_new_node(mut _commands: Commands, mut er_handle_node: EventReader<Even
             AST::Hide(_, _) => {
                 println!("handle hide");
             }
-            AST::Label(_, _, vec, _) => {
+            AST::Label(_, _, _, _) => {
                 println!("handle label");
             }
-            AST::Init(_, vec, _) => {
+            AST::Init(_, _, _) => {
                 println!("handle init");
             }
             AST::UserStatement(_, _) => {
