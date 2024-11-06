@@ -1,10 +1,10 @@
 [package]
 edition = "2021"
-name = "bevy_rl"
-version = "0.14.0"
+name = "bevy_novel"
+version = "0.0.1"
 license = "MIT OR Apache-2.0"
 description = "Visual Novels with Bevy"
-keywords = ["ai", "bevy", "gym", "rl"]
+keywords = ["ai", "visual-novel", "renpy", "rpy"]
 repository = "https://github.com/stillonearth/bevy_novel"
 
 [dependencies]
