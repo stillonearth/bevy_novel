@@ -6,8 +6,23 @@ label start:
 label chapter1_1:
 
     scene background
-    play music "Destiny.mp3"
 
-    "Hej, jag heter Character 1 och jag är en karaktär i det här spelet."
+    "I've always loved visual novels"
+
+    show character igor
+
+    "Bevy seems like the perfect choice for this project"
+
+    "I'm planning on using Rust as my programming language"
+
+    "It's a bit intimidating, but I'm up for the challenge"
+
+    "I've already started working on some basic components"
+
+    "But I need to make sure they're stable and bug-free first"
+
+    "Wish you were here to help me brainstorm"
+
+    "Thanks for listening, even if it's just a voice in my head!"
 
     return

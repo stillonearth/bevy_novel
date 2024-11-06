@@ -78,39 +78,44 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ui.spawn((
                 UiLink::<MainUi>::path("Root/Rectangle/Text"),
                 UiLayout::window()
-                    .pos(Rl((0., 0.)))
-                    .anchor(Anchor::BottomLeft)
+                    .pos(Rl((5., 80.)))
+                    .anchor(Anchor::CenterLeft)
                     .pack::<Base>(),
                 UiText2dBundle {
                     text: Text::from_section(
-                        "Hello world!",
+                        "",
                         TextStyle {
                             font: assets.load("font.ttf"),
-                            font_size: 5.0,
+                            font_size: 30.0,
                             color: Color::WHITE,
                         },
                     ),
                     ..default()
                 },
+                UiTextSize::new().size(Rh(5.0)),
                 NovelText {},
             ));
 
             ui.spawn((
                 UiLink::<MainUi>::path("Root/Rectangle/Image"),
                 UiLayout::solid().pack::<Base>(),
-                // UiImage2dBundle::from(assets.load("character igor.png")),
+                UiImage2dBundle::from(assets.load("character igor.png")),
                 NovelImage {},
-            ));
+            ))
+            .insert(Visibility::Hidden);
         });
 }
 
 fn handle_start_scenario(
     mut er_start_scenario: EventReader<EventStartScenario>,
     mut novel_data: ResMut<NovelData>,
+    mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
 ) {
     for event in er_start_scenario.read() {
         novel_data.current_index = 0;
         novel_data.ast = event.ast.clone();
+
+        ew_event_switch_next_node.send(EventSwitchNextNode {});
     }
 }
 
@@ -228,7 +233,11 @@ fn handle_new_node(
     mut commands: Commands,
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
-    mut q_background: Query<(Entity, &mut Visibility, &mut NovelBackground)>,
+    mut q_images: ParamSet<(
+        Query<(Entity, &mut Visibility, &mut NovelBackground)>,
+        Query<(Entity, &mut Visibility, &mut NovelImage)>,
+    )>,
+    mut q_text: Query<(Entity, &mut Text, &NovelText)>,
     assets: Res<AssetServer>,
 ) {
     for event in er_handle_node.read() {
@@ -245,7 +254,7 @@ fn handle_new_node(
                 // insert images
 
                 if let Some(img) = image {
-                    for (entity, mut v, _) in q_background.iter_mut() {
+                    for (entity, mut v, _) in q_images.p0().iter_mut() {
                         let image_name = format!("{}.png", img);
                         let image: Handle<Image> = assets.load(image_name);
                         commands.entity(entity).insert(image);
@@ -255,7 +264,14 @@ fn handle_new_node(
 
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
-            AST::Show(_, _) => {
+            AST::Show(_, img) => {
+                for (entity, mut v, _) in q_images.p1().iter_mut() {
+                    let image_name = format!("{}.png", img);
+                    let image: Handle<Image> = assets.load(image_name);
+                    commands.entity(entity).insert(image);
+                    *v = Visibility::Visible;
+                }
+
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Hide(_, _) => {
@@ -267,8 +283,22 @@ fn handle_new_node(
             AST::Init(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
-            AST::UserStatement(_, _) => {
-                println!("handle user statement");
+            AST::UserStatement(_, value) => {
+                // for now onlyu first person speech
+                if value.as_bytes()[0] as char != "\"".chars().next().unwrap() {
+                    continue;
+                }
+
+                for (_, mut text, _) in q_text.iter_mut() {
+                    *text = Text::from_section(
+                        value.clone(),
+                        TextStyle {
+                            font: assets.load("font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    );
+                }
             }
             _ => {
                 println!("handle unknown");
