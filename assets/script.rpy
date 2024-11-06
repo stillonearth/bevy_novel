@@ -9,7 +9,7 @@ label chapter1_1:
 
     "I've always loved visual novels"
 
-    show character igor
+    show character komarito
 
     "Bevy seems like the perfect choice for this project"
 
