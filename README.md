@@ -1,7 +1,9 @@
 # bevy_novel
 
-Visual Novel Plugin for Bevy. Get some narative to your indie games!
 
-A minimal renpy port to use with Bevy Engine.
+https://github.com/user-attachments/assets/aa9c7058-b641-4f36-b42f-902b2a8bbc0e
 
-Supports `scene, show, label, jump, say, play` keywords.
+
+Visual novel plugin for Bevy. Because your indie games deserve narration!
+
+Supports subset of rpy lanuage with `scene, show, label, jump, say, play` keywords.
