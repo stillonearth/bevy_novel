@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use bevy::prelude::*;
 use renpy_parser::parsers::AST;
 
@@ -40,4 +42,34 @@ pub struct EventHandleNode {
 #[derive(Clone, Event)]
 pub struct EventSay {
     pub data: String,
+}
+
+#[derive(Clone)]
+pub enum AudioMode {
+    Sound,
+    Music,
+    Voice,
+}
+
+// implement from_string trait for audio mode
+impl FromStr for AudioMode {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let empty_string = "";
+        let character = "\"";
+        let s = s.replace(character, empty_string);
+
+        match s.as_ref() {
+            "sound" => Ok(AudioMode::Sound),
+            "music" => Ok(AudioMode::Music),
+            "voice" => Ok(AudioMode::Voice),
+            _ => Err(()),
+        }
+    }
+}
+
+#[derive(Clone, Event)]
+pub struct EventPlayAudio {
+    pub filename: String,
+    pub audio_mode: AudioMode,
 }

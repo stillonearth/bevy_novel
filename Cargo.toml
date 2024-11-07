@@ -8,11 +8,37 @@ keywords = ["ai", "visual-novel", "renpy", "rpy"]
 repository = "https://github.com/stillonearth/bevy_novel"
 
 [dependencies]
-bevy = { version = "0.14.0" }
+bevy = { version = "0.14", default-features = false, features = [
+    "animation",
+    "bevy_asset",
+    "bevy_state",
+    "bevy_color",
+    "bevy_gilrs",
+    "bevy_scene",
+    "bevy_winit",
+    "bevy_core_pipeline",
+    "bevy_pbr",
+    "bevy_gltf",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_text",
+    "bevy_ui",
+    "multi_threaded",
+    "png",
+    "hdr",
+    "x11",
+    "bevy_gizmos",
+    "tonemapping_luts",
+    "smaa_luts",
+    "default_font",
+    "webgl2",
+    "sysinfo_plugin",
+] }
 bevy_lunex = { version = "0.2.4" }
 bevy-inspector-egui = "0.27.0"
 regex = "1.11.1"
-renpy_parser= "0.0.1"
+renpy_parser= "0.0.2"
+bevy_kira_audio = { version = "0.20" }
 
 [profile.dev]
 opt-level = 3

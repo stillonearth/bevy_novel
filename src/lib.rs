@@ -1,5 +1,7 @@
 pub mod events;
 
+use std::str::FromStr;
+
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_lunex::prelude::*;
 use events::*;
@@ -43,6 +45,7 @@ impl Plugin for NovelPlugin {
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
             .add_event::<EventHandleNode>()
+            .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>();
     }
 }
@@ -131,6 +134,7 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::Init(i, _, _) => *i,
             AST::Say(i, _, _, _) => *i,
             AST::UserStatement(i, _) => *i,
+            AST::Play(i, _, _) => *i,
             AST::Error => {
                 todo!()
             }
@@ -157,6 +161,7 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::Init(i, _, _) => *i,
             AST::Say(i, _, _, _) => *i,
             AST::UserStatement(i, _) => *i,
+            AST::Play(i, _, _) => *i,
             AST::Error => {
                 todo!()
             }
@@ -233,6 +238,7 @@ fn handle_new_node(
     mut commands: Commands,
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
+    mut ew_play_audio: EventWriter<EventPlayAudio>,
     mut q_images: ParamSet<(
         Query<(Entity, &mut Visibility, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut NovelImage)>,
@@ -282,6 +288,14 @@ fn handle_new_node(
             }
             AST::Init(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
+            }
+            AST::Play(_, mode, filename) => {
+                let audio_mode = AudioMode::from_str(&mode).unwrap();
+
+                ew_play_audio.send(EventPlayAudio {
+                    filename,
+                    audio_mode,
+                });
             }
             AST::UserStatement(_, value) => {
                 // for now onlyu first person speech

@@ -1,7 +1,7 @@
 use bevy::{input::common_conditions::input_toggle_active, prelude::*};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_lunex::{prelude::MainUi, UiMinimalPlugins};
-use bevy_rl::{events::EventStartScenario, NovelPlugin};
+use bevy_novel::{events::EventStartScenario, NovelPlugin};
 use renpy_parser::{
     group_logical_lines,
     lexer::Lexer,
