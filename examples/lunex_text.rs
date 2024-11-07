@@ -1,4 +1,5 @@
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 
 fn main() {

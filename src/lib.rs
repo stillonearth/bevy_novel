@@ -3,6 +3,7 @@ pub mod events;
 use std::str::FromStr;
 
 use bevy::{prelude::*, sprite::Anchor};
+use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
 use events::*;
 use renpy_parser::parsers::AST;
@@ -27,7 +28,8 @@ struct NovelData {
 
 impl Plugin for NovelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup)
+        app.add_plugins(AudioPlugin)
+            .add_systems(Startup, setup)
             .add_systems(
                 Update,
                 (
@@ -35,6 +37,7 @@ impl Plugin for NovelPlugin {
                     handle_switch_next_node,
                     handle_new_node,
                     handle_press_key,
+                    handle_play_audio,
                 ),
             )
             .add_event::<EventShow>()
@@ -107,6 +110,18 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ))
             .insert(Visibility::Hidden);
         });
+}
+
+fn handle_play_audio(
+    mut er_play_audio: EventReader<EventPlayAudio>,
+    asset_server: Res<AssetServer>,
+    audio: Res<Audio>,
+) {
+    for event in er_play_audio.read() {
+        audio
+            .play(asset_server.load(event.filename.clone()))
+            .looped();
+    }
 }
 
 fn handle_start_scenario(
