@@ -44,7 +44,7 @@ pub struct EventSay {
     pub data: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum AudioMode {
     Sound,
     Music,

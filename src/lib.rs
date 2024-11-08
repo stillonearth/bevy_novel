@@ -118,9 +118,11 @@ fn handle_play_audio(
     audio: Res<Audio>,
 ) {
     for event in er_play_audio.read() {
-        audio
-            .play(asset_server.load(event.filename.clone()))
-            .looped();
+        let mut play_event = audio.play(asset_server.load(event.filename.clone()));
+
+        if event.audio_mode == AudioMode::Music {
+            play_event.looped();
+        }
     }
 }
 
