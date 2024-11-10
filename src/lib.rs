@@ -19,6 +19,9 @@ struct NovelText;
 
 pub struct NovelPlugin;
 
+#[derive(Resource, Clone)]
+struct MusicHandle(Option<Handle<AudioInstance>>);
+
 // simple derive, to set all fields to their defaults
 #[derive(Resource, Default)]
 struct NovelData {
@@ -51,7 +54,8 @@ impl Plugin for NovelPlugin {
             .add_event::<EventShowTextNode>()
             .add_event::<EventHandleNode>()
             .add_event::<EventPlayAudio>()
-            .init_resource::<NovelData>();
+            .init_resource::<NovelData>()
+            .insert_resource(MusicHandle(None));
     }
 }
 
@@ -107,7 +111,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ui.spawn((
                 UiLink::<MainUi>::path("Root/Rectangle/Image"),
                 UiLayout::solid().pack::<Base>(),
-                UiImage2dBundle::from(assets.load("character igor.png")),
+                UiImage2dBundle::from(assets.load("character komarito.png")),
                 NovelImage {},
             ))
             .insert(Visibility::Hidden);
@@ -115,15 +119,25 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn handle_play_audio(
+    mut commands: Commands,
     mut er_play_audio: EventReader<EventPlayAudio>,
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
+    music_handle: Res<MusicHandle>,
+    mut audio_instances: ResMut<Assets<AudioInstance>>,
 ) {
     for event in er_play_audio.read() {
         let mut play_event = audio.play(asset_server.load(event.filename.clone()));
 
         if event.audio_mode == AudioMode::Music {
-            play_event.looped();
+            if let Some(handle) = music_handle.clone().0 {
+                if let Some(instance) = audio_instances.get_mut(&handle) {
+                    instance.stop(AudioTween::default());
+                }
+            }
+
+            let handle = play_event.looped().handle();
+            commands.insert_resource(MusicHandle(Some(handle)));
         }
     }
 }
@@ -151,12 +165,14 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::Hide(i, _) => *i,
             AST::Label(i, _, _, _) => *i,
             AST::Init(i, _, _) => *i,
-            AST::Say(i, _, _, _) => *i,
+            AST::Say(i, _, _) => *i,
             AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Error => {
                 todo!()
             }
+            AST::Define(i, _) => *i,
+            AST::Stop(i, _, _, _) => *i,
         };
 
         if index == ast_index {
@@ -178,12 +194,14 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::Hide(i, _) => *i,
             AST::Label(i, _, _, _) => *i,
             AST::Init(i, _, _) => *i,
-            AST::Say(i, _, _, _) => *i,
+            AST::Say(i, _, _) => *i,
             AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Error => {
                 todo!()
             }
+            AST::Define(i, _) => *i,
+            AST::Stop(i, _, _, _) => *i,
         })
         .collect();
 
@@ -286,6 +304,10 @@ fn handle_new_node(
                     }
                 }
 
+                for (_, mut visibility, _) in queries.p1().iter_mut() {
+                    *visibility = Visibility::Hidden;
+                }
+
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, img) => {
@@ -314,16 +336,13 @@ fn handle_new_node(
                     filename,
                     audio_mode,
                 });
-            }
-            AST::UserStatement(_, value) => {
-                // for now onlyu first person speech
-                if value.as_bytes()[0] as char != "\"".chars().next().unwrap() {
-                    continue;
-                }
 
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
+            }
+            AST::Say(_, who, what) => {
                 for (_, mut visibility, mut text, _) in queries.p2().iter_mut() {
                     *text = Text::from_section(
-                        value.clone(),
+                        what.clone(),
                         TextStyle {
                             font: assets.load("font.ttf"),
                             font_size: 30.0,
