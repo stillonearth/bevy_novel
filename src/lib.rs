@@ -38,6 +38,7 @@ impl Plugin for NovelPlugin {
                     handle_new_node,
                     handle_press_key,
                     handle_play_audio,
+                    handle_show_text_node,
                 ),
             )
             .add_event::<EventShow>()
@@ -47,6 +48,7 @@ impl Plugin for NovelPlugin {
             .add_event::<EventSay>()
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
+            .add_event::<EventShowTextNode>()
             .add_event::<EventHandleNode>()
             .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>();
@@ -256,16 +258,15 @@ fn handle_new_node(
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
     mut ew_play_audio: EventWriter<EventPlayAudio>,
-    mut q_images: ParamSet<(
+    mut ew_show_text_node: EventWriter<EventShowTextNode>,
+    mut queries: ParamSet<(
         Query<(Entity, &mut Visibility, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut NovelImage)>,
+        Query<(Entity, &mut Visibility, &mut Text, &NovelText)>,
     )>,
-    mut q_text: Query<(Entity, &mut Text, &NovelText)>,
     assets: Res<AssetServer>,
 ) {
     for event in er_handle_node.read() {
-        println!("{:?}", event.ast);
-
         match event.ast.clone() {
             AST::Return(_, _) => {
                 println!("Over");
@@ -277,7 +278,7 @@ fn handle_new_node(
                 // insert images
 
                 if let Some(img) = image {
-                    for (entity, mut v, _) in q_images.p0().iter_mut() {
+                    for (entity, mut v, _) in queries.p0().iter_mut() {
                         let image_name = format!("{}.png", img);
                         let image: Handle<Image> = assets.load(image_name);
                         commands.entity(entity).insert(image);
@@ -288,7 +289,7 @@ fn handle_new_node(
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, img) => {
-                for (entity, mut v, _) in q_images.p1().iter_mut() {
+                for (entity, mut v, _) in queries.p1().iter_mut() {
                     let image_name = format!("{}.png", img);
                     let image: Handle<Image> = assets.load(image_name);
                     commands.entity(entity).insert(image);
@@ -320,7 +321,7 @@ fn handle_new_node(
                     continue;
                 }
 
-                for (_, mut text, _) in q_text.iter_mut() {
+                for (_, mut visibility, mut text, _) in queries.p2().iter_mut() {
                     *text = Text::from_section(
                         value.clone(),
                         TextStyle {
@@ -329,6 +330,12 @@ fn handle_new_node(
                             color: Color::WHITE,
                         },
                     );
+
+                    // Changing text without hiding it causes jumpy rendering
+                    // Change text, hide it and show the next frame works better
+                    *visibility = Visibility::Hidden;
+
+                    ew_show_text_node.send(EventShowTextNode {});
                 }
             }
             _ => {
@@ -343,7 +350,24 @@ fn handle_press_key(
     mut ew_switch_next_node: EventWriter<EventSwitchNextNode>,
 ) {
     if keys.just_pressed(KeyCode::Space) {
-        println!("handle_press_key");
         ew_switch_next_node.send(EventSwitchNextNode {});
     }
 }
+
+fn handle_show_text_node(
+    mut er_show_text_node: EventReader<EventShowTextNode>,
+    mut q_text: Query<(Entity, &mut Visibility, &mut Text, &NovelText)>,
+) {
+    for _ in er_show_text_node.read() {
+        for (_, mut visibility, _, _) in q_text.iter_mut() {
+            *visibility = Visibility::Visible;
+        }
+    }
+}
+
+// ---------------
+// Internal Events
+// ---------------
+
+#[derive(Event)]
+struct EventShowTextNode {}
