@@ -8,14 +8,17 @@ use bevy_lunex::prelude::*;
 use events::*;
 use renpy_parser::parsers::AST;
 
-#[derive(Debug, Component)]
+#[derive(Component)]
 struct NovelBackground {}
 
-#[derive(Debug, Component)]
+#[derive(Component)]
 struct NovelImage;
 
-#[derive(Debug, Component)]
-struct NovelText;
+#[derive(Component)]
+struct NovelTextWhat;
+
+#[derive(Component)]
+struct NovelTextWho;
 
 pub struct NovelPlugin;
 
@@ -105,7 +108,28 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                     ..default()
                 },
                 UiTextSize::new().size(Rh(5.0)),
-                NovelText {},
+                NovelTextWhat {},
+            ));
+
+            ui.spawn((
+                UiLink::<MainUi>::path("Root/Rectangle/Text"),
+                UiLayout::window()
+                    .pos(Rl((5., 80.)))
+                    .anchor(Anchor::CenterLeft)
+                    .pack::<Base>(),
+                UiText2dBundle {
+                    text: Text::from_section(
+                        "who",
+                        TextStyle {
+                            font: assets.load("font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    ),
+                    ..default()
+                },
+                UiTextSize::new().size(Rh(5.0)),
+                NovelTextWho {},
             ));
 
             ui.spawn((
@@ -280,7 +304,7 @@ fn handle_new_node(
     mut queries: ParamSet<(
         Query<(Entity, &mut Visibility, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut NovelImage)>,
-        Query<(Entity, &mut Visibility, &mut Text, &NovelText)>,
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
     )>,
     assets: Res<AssetServer>,
 ) {
@@ -375,7 +399,7 @@ fn handle_press_key(
 
 fn handle_show_text_node(
     mut er_show_text_node: EventReader<EventShowTextNode>,
-    mut q_text: Query<(Entity, &mut Visibility, &mut Text, &NovelText)>,
+    mut q_text: Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
 ) {
     for _ in er_show_text_node.read() {
         for (_, mut visibility, _, _) in q_text.iter_mut() {
