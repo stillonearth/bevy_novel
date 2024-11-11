@@ -1,4 +1,5 @@
-﻿define character_1 = Character("Character 1", color="#00AABC")
+﻿define character_1 = Character("Character 1", color="#000000")
+define character_2 = Character("Character 2", color="#ffaabb")
 
 label start:
     jump chapter1_1
@@ -13,11 +14,15 @@ label chapter1_1:
 
     show character komarito
 
-    "Bevy seems like the perfect choice for this project"
+    character_1 "Bevy seems like the perfect choice for this project"
 
-    "I'm planning on using Rust as my programming language"
+    stop music
 
-    "It's a bit intimidating, but I'm up for the challenge"
+    character_1 "I'm planning on using Rust as my programming language"
+
+    play music "Calamity.wav"
+
+    character_1 "It's a bit intimidating, but I'm up for the challenge"
 
     scene city road anime
 
@@ -27,12 +32,12 @@ label chapter1_1:
 
     show character igor
 
-    "But I need to make sure they're stable and bug-free first"
+    character_2 "But I need to make sure they're stable and bug-free first"
 
-    "Wish you were here to help me brainstorm"
+    character_2 "Wish you were here to help me brainstorm"
 
-    play music "Calamity.wav"
+    stop music fadeout 5.9
 
-    "Thanks for listening, even if it's just a voice in my head!"
+    character_2 "Thanks for listening, even if it's just a voice in my head!"
 
     return

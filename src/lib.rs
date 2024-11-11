@@ -91,7 +91,29 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             .insert(Visibility::Hidden);
 
             ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle/Text"),
+                UiLink::<MainUi>::path("Root/Rectangle/TextWho"),
+                UiLayout::window()
+                    .pos(Rl((5., 72.)))
+                    .anchor(Anchor::CenterLeft)
+                    .pack::<Base>(),
+                UiText2dBundle {
+                    text: Text::from_section(
+                        "",
+                        TextStyle {
+                            font: assets.load("font.ttf"),
+                            font_size: 30.0,
+                            color: Color::linear_rgb(0.7, 0.2, 1.0),
+                        },
+                    ),
+                    ..default()
+                },
+                UiTextSize::new().size(Rh(7.0)),
+                NovelTextWho {},
+            ))
+            .insert(Visibility::Hidden);
+
+            ui.spawn((
+                UiLink::<MainUi>::path("Root/Rectangle/TextWhat"),
                 UiLayout::window()
                     .pos(Rl((5., 80.)))
                     .anchor(Anchor::CenterLeft)
@@ -109,27 +131,6 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 },
                 UiTextSize::new().size(Rh(5.0)),
                 NovelTextWhat {},
-            ));
-
-            ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle/Text"),
-                UiLayout::window()
-                    .pos(Rl((5., 80.)))
-                    .anchor(Anchor::CenterLeft)
-                    .pack::<Base>(),
-                UiText2dBundle {
-                    text: Text::from_section(
-                        "who",
-                        TextStyle {
-                            font: assets.load("font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    ),
-                    ..default()
-                },
-                UiTextSize::new().size(Rh(5.0)),
-                NovelTextWho {},
             ));
 
             ui.spawn((
@@ -174,7 +175,6 @@ fn handle_start_scenario(
     for event in er_start_scenario.read() {
         novel_data.current_index = 0;
         novel_data.ast = event.ast.clone();
-
         ew_event_switch_next_node.send(EventSwitchNextNode {});
     }
 }
@@ -192,11 +192,11 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::Say(i, _, _) => *i,
             AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
-            AST::Error => {
-                todo!()
-            }
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
+            _ => {
+                todo!()
+            }
         };
 
         if index == ast_index {
@@ -221,11 +221,11 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::Say(i, _, _) => *i,
             AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
-            AST::Error => {
-                todo!()
-            }
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
+            _ => {
+                todo!()
+            }
         })
         .collect();
 
@@ -305,6 +305,7 @@ fn handle_new_node(
         Query<(Entity, &mut Visibility, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut NovelImage)>,
         Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
     )>,
     assets: Res<AssetServer>,
 ) {
@@ -373,16 +374,25 @@ fn handle_new_node(
                             color: Color::WHITE,
                         },
                     );
-
-                    // Changing text without hiding it causes jumpy rendering
-                    // Change text, hide it and show the next frame works better
                     *visibility = Visibility::Hidden;
-
-                    ew_show_text_node.send(EventShowTextNode {});
                 }
+
+                for (_, mut visibility, mut text, _) in queries.p3().iter_mut() {
+                    *text = Text::from_section(
+                        who.clone().unwrap_or_default(),
+                        TextStyle {
+                            font: assets.load("font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    );
+                    *visibility = Visibility::Hidden;
+                }
+
+                ew_show_text_node.send(EventShowTextNode {});
             }
             _ => {
-                println!("handle unknown");
+                ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
         }
     }
@@ -399,10 +409,17 @@ fn handle_press_key(
 
 fn handle_show_text_node(
     mut er_show_text_node: EventReader<EventShowTextNode>,
-    mut q_text: Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
+    mut paramset: ParamSet<(
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
+    )>,
 ) {
     for _ in er_show_text_node.read() {
-        for (_, mut visibility, _, _) in q_text.iter_mut() {
+        for (_, mut visibility, _, _) in paramset.p0().iter_mut() {
+            *visibility = Visibility::Visible;
+        }
+
+        for (_, mut visibility, _, _) in paramset.p1().iter_mut() {
             *visibility = Visibility::Visible;
         }
     }
