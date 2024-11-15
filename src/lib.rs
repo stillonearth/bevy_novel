@@ -1,12 +1,14 @@
 pub mod events;
 
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
-use events::*;
 use renpy_parser::parsers::AST;
+
+use events::*;
 
 #[derive(Component)]
 struct NovelBackground {}
@@ -25,11 +27,27 @@ pub struct NovelPlugin;
 #[derive(Resource, Clone)]
 struct MusicHandle(Option<Handle<AudioInstance>>);
 
-// simple derive, to set all fields to their defaults
 #[derive(Resource, Default)]
-struct NovelData {
+pub struct NovelData {
     ast: Vec<AST>,
     current_index: usize,
+}
+
+impl NovelData {
+    pub fn push_text_node(&mut self, who: Option<String>, what: String) {
+        let next_index = list_ast_indices(self.ast.clone())
+            .iter()
+            .max()
+            .unwrap_or(&0)
+            + 1;
+        let node = AST::Say(next_index, who, what);
+        self.ast.push(node);
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct NovelSettings {
+    pub assets_path: String,
 }
 
 impl Plugin for NovelPlugin {
@@ -58,7 +76,8 @@ impl Plugin for NovelPlugin {
             .add_event::<EventHandleNode>()
             .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>()
-            .insert_resource(MusicHandle(None));
+            .insert_resource(MusicHandle(None))
+            .insert_resource(NovelSettings::default());
     }
 }
 
@@ -75,8 +94,8 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ui.spawn((
                 UiLink::<MainUi>::path("Root"),
                 UiLayout::boundary()
-                    .pos1(Ab(10.0))
-                    .pos2(Rl(100.0) - Ab(10.0))
+                    .pos1(Ab(0.0))
+                    .pos2(Rl(100.0))
                     .pack::<Base>(),
             ));
 
@@ -85,7 +104,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
                 UiLayout::solid()
                     .size((Rl(100.0), Rl(100.0)))
                     .pack::<Base>(),
-                UiImage2dBundle::from(assets.load("inverted.png")),
+                UiImage2dBundle::from(assets.load("background_empty.png")),
                 NovelBackground {},
             ))
             .insert(Visibility::Hidden);
@@ -136,7 +155,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
             ui.spawn((
                 UiLink::<MainUi>::path("Root/Rectangle/Image"),
                 UiLayout::solid().pack::<Base>(),
-                UiImage2dBundle::from(assets.load("character komarito.png")),
+                UiImage2dBundle::from(assets.load("character_empty.png")),
                 NovelImage {},
             ))
             .insert(Visibility::Hidden);
@@ -144,6 +163,7 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn handle_play_audio(
+    plugin_settings: Res<NovelSettings>,
     mut commands: Commands,
     mut er_play_audio: EventReader<EventPlayAudio>,
     asset_server: Res<AssetServer>,
@@ -151,8 +171,12 @@ fn handle_play_audio(
     music_handle: Res<MusicHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
 ) {
+    let base_path = PathBuf::from(&plugin_settings.assets_path);
+
     for event in er_play_audio.read() {
-        let mut play_event = audio.play(asset_server.load(event.filename.clone()));
+        let asset_path = base_path.join(event.filename.clone());
+        let asset_handle = asset_server.load(asset_path);
+        let mut play_event = audio.play(asset_handle);
 
         if event.audio_mode == AudioMode::Music {
             if let Some(handle) = music_handle.clone().0 {
@@ -190,13 +214,12 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::Label(i, _, _, _) => *i,
             AST::Init(i, _, _) => *i,
             AST::Say(i, _, _) => *i,
-            AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
-            _ => {
-                todo!()
-            }
+            AST::GameMechanic(i, _) => *i,
+            AST::LLMGenerate(i, _, _) => *i,
+            AST::Error => panic!(),
         };
 
         if index == ast_index {
@@ -219,13 +242,12 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::Label(i, _, _, _) => *i,
             AST::Init(i, _, _) => *i,
             AST::Say(i, _, _) => *i,
-            AST::UserStatement(i, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
-            _ => {
-                todo!()
-            }
+            AST::GameMechanic(i, _) => *i,
+            AST::LLMGenerate(i, _, _) => *i,
+            AST::Error => panic!(),
         })
         .collect();
 
@@ -297,6 +319,7 @@ fn handle_switch_next_node(
 
 fn handle_new_node(
     mut commands: Commands,
+    plugin_settings: Res<NovelSettings>,
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
     mut ew_play_audio: EventWriter<EventPlayAudio>,
@@ -309,11 +332,11 @@ fn handle_new_node(
     )>,
     assets: Res<AssetServer>,
 ) {
+    let base_path = PathBuf::from(&plugin_settings.assets_path);
+
     for event in er_handle_node.read() {
         match event.ast.clone() {
-            AST::Return(_, _) => {
-                println!("Over");
-            }
+            AST::Return(_, _) => {}
             AST::Jump(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
@@ -323,8 +346,9 @@ fn handle_new_node(
                 if let Some(img) = image {
                     for (entity, mut v, _) in queries.p0().iter_mut() {
                         let image_name = format!("{}.png", img);
-                        let image: Handle<Image> = assets.load(image_name);
-                        commands.entity(entity).insert(image);
+                        let image_path = base_path.join(image_name);
+                        let handle: Handle<Image> = assets.load(image_path);
+                        commands.entity(entity).insert(handle);
                         *v = Visibility::Visible;
                     }
                 }
