@@ -6,7 +6,7 @@ use std::str::FromStr;
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_kira_audio::prelude::*;
 use bevy_lunex::prelude::*;
-use renpy_parser::parsers::AST;
+use renpy_parser::parsers::{inject_node, AST};
 
 use events::*;
 
@@ -29,19 +29,29 @@ struct MusicHandle(Option<Handle<AudioInstance>>);
 
 #[derive(Resource, Default)]
 pub struct NovelData {
-    ast: Vec<AST>,
+    pub ast: Vec<AST>,
     current_index: usize,
 }
 
 impl NovelData {
-    pub fn push_text_node(&mut self, who: Option<String>, what: String) {
-        let next_index = list_ast_indices(self.ast.clone())
-            .iter()
-            .max()
-            .unwrap_or(&0)
-            + 1;
-        let node = AST::Say(next_index, who, what);
-        self.ast.push(node);
+    pub fn push_text_node(&mut self, who: Option<String>, what: String, index: usize) {
+        let node = AST::Say(index, who, what);
+        self.ast = inject_node(self.ast.clone(), node.clone());
+        for a in self.ast.iter_mut() {
+            if let AST::Label(node_index, label, node_ast, opts) = a {
+                let first_index = node_ast.first().unwrap().index();
+                let last_index = node_ast.last().unwrap().index();
+
+                if index >= first_index && index <= last_index {
+                    *a = AST::Label(
+                        node_index.clone(),
+                        label.clone(),
+                        inject_node(node_ast.clone(), node.clone()).clone(),
+                        opts.clone(),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -377,6 +387,12 @@ fn handle_new_node(
             }
             AST::Init(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
+            }
+            AST::GameMechanic(_, _) => {
+                // ew_event_switch_next_node.send(EventSwitchNextNode {});
+            }
+            AST::LLMGenerate(_, _, _) => {
+                // ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Play(_, mode, filename) => {
                 let audio_mode = AudioMode::from_str(&mode).unwrap();

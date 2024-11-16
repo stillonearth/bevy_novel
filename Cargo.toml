@@ -37,7 +37,7 @@ bevy = { version = "0.14", default-features = false, features = [
 bevy_lunex = { version = "0.2.4" }
 bevy-inspector-egui = "0.27.0"
 regex = "1.11.1"
-renpy_parser= "0.0.4"
+renpy_parser= "0.0.5"
 bevy_kira_audio = { version = "0.20", features = ["ogg", "mp3", "wav"]}
 
 [profile.dev]
