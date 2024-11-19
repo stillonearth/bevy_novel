@@ -53,6 +53,26 @@ impl NovelData {
             }
         }
     }
+
+    pub fn push_scene_node(&mut self, image: String, index: usize) {
+        let node = AST::Scene(index, Some(image), "master".into());
+        self.ast = inject_node(self.ast.clone(), node.clone());
+        for a in self.ast.iter_mut() {
+            if let AST::Label(node_index, label, node_ast, opts) = a {
+                let first_index = node_ast.first().unwrap().index();
+                let last_index = node_ast.last().unwrap().index();
+
+                if index >= first_index && index <= last_index {
+                    *a = AST::Label(
+                        node_index.clone(),
+                        label.clone(),
+                        inject_node(node_ast.clone(), node.clone()).clone(),
+                        opts.clone(),
+                    )
+                }
+            }
+        }
+    }
 }
 
 #[derive(Resource, Default)]
@@ -372,7 +392,8 @@ fn handle_new_node(
             AST::Show(_, img) => {
                 for (entity, mut v, _) in queries.p1().iter_mut() {
                     let image_name = format!("{}.png", img);
-                    let image: Handle<Image> = assets.load(image_name);
+                    let image_path = base_path.join(image_name);
+                    let image: Handle<Image> = assets.load(image_path);
                     commands.entity(entity).insert(image);
                     *v = Visibility::Visible;
                 }

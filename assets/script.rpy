@@ -7,6 +7,8 @@ label start:
 label chapter1_1:
 
     scene background
+    
+    play music "Truth.mp3"
 
     "I've always loved visual novels"
 
