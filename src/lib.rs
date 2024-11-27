@@ -305,24 +305,16 @@ fn handle_switch_next_node(
 
     for _ in er_event_switch_next_node.read() {
         while !switched {
-            println!("here 1");
-
             let current_index = novel_data.current_index;
 
             let next_index = current_index + 1;
             let indices = list_ast_indices(novel_data.ast.clone());
             let max_index = *indices.iter().max().unwrap_or(&0);
 
-            println!("novel_data_ast: {:?}", novel_data.ast);
-            println!("next_index: {:?}", next_index);
-            println!("----");
-
             if next_index > max_index {
                 switched = true;
                 continue;
             }
-
-            println!("here 2");
 
             novel_data.current_index = next_index;
 
@@ -334,8 +326,6 @@ fn handle_switch_next_node(
                 switched = true;
                 continue;
             }
-
-            println!("here 3");
 
             for node in novel_data.ast.clone() {
                 let next_element: Option<AST> = match node {
