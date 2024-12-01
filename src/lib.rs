@@ -21,7 +21,6 @@ struct NovelTextWhat;
 
 #[derive(Component)]
 struct NovelTextWho;
-
 pub struct NovelPlugin;
 
 #[derive(Resource, Clone)]
@@ -78,6 +77,7 @@ impl NovelData {
 #[derive(Resource, Default)]
 pub struct NovelSettings {
     pub assets_path: String,
+    pub pause_handle_switch_node: bool,
 }
 
 impl Plugin for NovelPlugin {
@@ -93,6 +93,7 @@ impl Plugin for NovelPlugin {
                     handle_press_key,
                     handle_play_audio,
                     handle_show_text_node,
+                    handle_hide_text_node,
                 ),
             )
             .add_event::<EventShow>()
@@ -103,6 +104,7 @@ impl Plugin for NovelPlugin {
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
             .add_event::<EventShowTextNode>()
+            .add_event::<EventHideTextNode>()
             .add_event::<EventHandleNode>()
             .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>()
@@ -193,13 +195,13 @@ fn setup(mut commands: Commands, assets: Res<AssetServer>) {
 }
 
 fn handle_play_audio(
-    plugin_settings: Res<NovelSettings>,
-    mut commands: Commands,
-    mut er_play_audio: EventReader<EventPlayAudio>,
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
     music_handle: Res<MusicHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
+    mut commands: Commands,
+    mut er_play_audio: EventReader<EventPlayAudio>,
+    plugin_settings: Res<NovelSettings>,
 ) {
     let base_path = PathBuf::from(&plugin_settings.assets_path);
 
@@ -355,6 +357,7 @@ fn handle_new_node(
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
     mut ew_play_audio: EventWriter<EventPlayAudio>,
     mut ew_show_text_node: EventWriter<EventShowTextNode>,
+    mut ew_hide_text_node: EventWriter<EventHideTextNode>,
     mut queries: ParamSet<(
         Query<(Entity, &mut Visibility, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut NovelImage)>,
@@ -427,7 +430,7 @@ fn handle_new_node(
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Say(_, who, what) => {
-                for (_, mut visibility, mut text, _) in queries.p2().iter_mut() {
+                for (_, _, mut text, _) in queries.p2().iter_mut() {
                     *text = Text::from_section(
                         what.clone(),
                         TextStyle {
@@ -436,10 +439,10 @@ fn handle_new_node(
                             color: Color::WHITE,
                         },
                     );
-                    *visibility = Visibility::Hidden;
+                    // *visibility = Visibility::Hidden;
                 }
 
-                for (_, mut visibility, mut text, _) in queries.p3().iter_mut() {
+                for (_, _, mut text, _) in queries.p3().iter_mut() {
                     *text = Text::from_section(
                         who.clone().unwrap_or_default(),
                         TextStyle {
@@ -448,9 +451,10 @@ fn handle_new_node(
                             color: Color::WHITE,
                         },
                     );
-                    *visibility = Visibility::Hidden;
+                    // *visibility = Visibility::Hidden;
                 }
 
+                ew_hide_text_node.send(EventHideTextNode {});
                 ew_show_text_node.send(EventShowTextNode {});
             }
             _ => {
@@ -461,9 +465,14 @@ fn handle_new_node(
 }
 
 fn handle_press_key(
+    novel_settings: Res<NovelSettings>,
     keys: Res<ButtonInput<KeyCode>>,
     mut ew_switch_next_node: EventWriter<EventSwitchNextNode>,
 ) {
+    if novel_settings.pause_handle_switch_node {
+        return;
+    }
+
     if keys.just_pressed(KeyCode::Space) {
         ew_switch_next_node.send(EventSwitchNextNode {});
     }
@@ -487,9 +496,20 @@ fn handle_show_text_node(
     }
 }
 
-// ---------------
-// Internal Events
-// ---------------
+fn handle_hide_text_node(
+    mut er_show_text_node: EventReader<EventHideTextNode>,
+    mut paramset: ParamSet<(
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
+        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
+    )>,
+) {
+    for _ in er_show_text_node.read() {
+        for (_, mut visibility, _, _) in paramset.p0().iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
 
-#[derive(Event)]
-struct EventShowTextNode {}
+        for (_, mut visibility, _, _) in paramset.p1().iter_mut() {
+            *visibility = Visibility::Hidden;
+        }
+    }
+}

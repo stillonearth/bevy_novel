@@ -73,3 +73,9 @@ pub struct EventPlayAudio {
     pub filename: String,
     pub audio_mode: AudioMode,
 }
+
+#[derive(Event)]
+pub struct EventShowTextNode {}
+
+#[derive(Event)]
+pub struct EventHideTextNode {}
