@@ -3,9 +3,8 @@ pub mod events;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
-use bevy_lunex::prelude::*;
 use renpy_parser::parsers::{inject_node, AST};
 
 use events::*;
@@ -43,7 +42,7 @@ impl NovelData {
 
                 if index >= first_index && index <= last_index {
                     *a = AST::Label(
-                        node_index.clone(),
+                        *node_index,
                         label.clone(),
                         inject_node(node_ast.clone(), node.clone()).clone(),
                         opts.clone(),
@@ -63,7 +62,7 @@ impl NovelData {
 
                 if index >= first_index && index <= last_index {
                     *a = AST::Label(
-                        node_index.clone(),
+                        *node_index,
                         label.clone(),
                         inject_node(node_ast.clone(), node.clone()).clone(),
                         opts.clone(),
@@ -113,84 +112,42 @@ impl Plugin for NovelPlugin {
     }
 }
 
-fn setup(mut commands: Commands, assets: Res<AssetServer>) {
+fn setup(mut commands: Commands) {
+    commands.spawn((Sprite { ..default() }, NovelBackground {}, ZIndex(1)));
+    commands.spawn((Sprite { ..default() }, NovelImage {}, ZIndex(2)));
+
     commands
         .spawn((
-            UiTreeBundle::<MainUi> {
-                tree: UiTree::new2d("NovelUISystem"),
+            Text::default(),
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(20.0),
+                left: Val::Px(20.0),
                 ..default()
             },
-            SourceFromCamera,
         ))
-        .with_children(|ui| {
-            ui.spawn((
-                UiLink::<MainUi>::path("Root"),
-                UiLayout::boundary()
-                    .pos1(Ab(0.0))
-                    .pos2(Rl(100.0))
-                    .pack::<Base>(),
-            ));
-
-            ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle"),
-                UiLayout::solid()
-                    .size((Rl(100.0), Rl(100.0)))
-                    .pack::<Base>(),
-                UiImage2dBundle::from(assets.load("background_empty.png")),
-                NovelBackground {},
-            ))
-            .insert(Visibility::Hidden);
-
-            ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle/TextWho"),
-                UiLayout::window()
-                    .pos(Rl((5., 72.)))
-                    .anchor(Anchor::CenterLeft)
-                    .pack::<Base>(),
-                UiText2dBundle {
-                    text: Text::from_section(
-                        "",
-                        TextStyle {
-                            font: assets.load("font.ttf"),
-                            font_size: 30.0,
-                            color: Color::linear_rgb(0.7, 0.2, 1.0),
-                        },
-                    ),
-                    ..default()
-                },
-                UiTextSize::new().size(Rh(7.0)),
+        .with_children(|p| {
+            p.spawn((
+                TextSpan::new("text novel who"),
                 NovelTextWho {},
-            ))
-            .insert(Visibility::Hidden);
-
-            ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle/TextWhat"),
-                UiLayout::window()
-                    .pos(Rl((5., 80.)))
-                    .anchor(Anchor::CenterLeft)
-                    .pack::<Base>(),
-                UiText2dBundle {
-                    text: Text::from_section(
-                        "",
-                        TextStyle {
-                            font: assets.load("font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    ),
-                    ..default()
-                },
-                UiTextSize::new().size(Rh(5.0)),
-                NovelTextWhat {},
+                Name::new("Text Who"),
+                TextLayout::new_with_justify(JustifyText::Left),
+                Visibility::Visible,
             ));
 
-            ui.spawn((
-                UiLink::<MainUi>::path("Root/Rectangle/Image"),
-                UiLayout::solid().pack::<Base>(),
-                UiImage2dBundle::from(assets.load("character_empty.png")),
-                NovelImage {},
-            ))
-            .insert(Visibility::Hidden);
+            p.spawn((
+                TextSpan::new("\n"),
+                Name::new("Text Span"),
+                TextLayout::new_with_justify(JustifyText::Left),
+            ));
+
+            p.spawn((
+                TextSpan::new("text novel what"),
+                NovelTextWhat {},
+                Name::new("Text What"),
+                TextLayout::new_with_justify(JustifyText::Left),
+                Visibility::Visible,
+            ));
         });
 }
 
@@ -350,8 +307,9 @@ fn handle_switch_next_node(
     // find element with required index
 }
 
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 fn handle_new_node(
-    mut commands: Commands,
     plugin_settings: Res<NovelSettings>,
     mut er_handle_node: EventReader<EventHandleNode>,
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
@@ -359,10 +317,10 @@ fn handle_new_node(
     mut ew_show_text_node: EventWriter<EventShowTextNode>,
     mut ew_hide_text_node: EventWriter<EventHideTextNode>,
     mut queries: ParamSet<(
-        Query<(Entity, &mut Visibility, &mut NovelBackground)>,
-        Query<(Entity, &mut Visibility, &mut NovelImage)>,
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
+        Query<(Entity, &mut Visibility, &mut Sprite, &mut NovelBackground)>,
+        Query<(Entity, &mut Visibility, &mut Sprite, &mut NovelImage)>,
+        Query<(Entity, &mut Visibility, &mut TextSpan, &NovelTextWhat)>,
+        Query<(Entity, &mut Visibility, &mut TextSpan, &NovelTextWho)>,
     )>,
     assets: Res<AssetServer>,
 ) {
@@ -378,27 +336,25 @@ fn handle_new_node(
                 // insert images
 
                 if let Some(img) = image {
-                    for (entity, mut v, _) in queries.p0().iter_mut() {
+                    for (_, mut v, mut sprite, _) in queries.p0().iter_mut() {
                         let image_name = format!("{}.png", img);
                         let image_path = base_path.join(image_name);
-                        let handle: Handle<Image> = assets.load(image_path);
-                        commands.entity(entity).insert(handle);
+                        *sprite = Sprite::from_image(assets.load(image_path));
                         *v = Visibility::Visible;
                     }
                 }
 
-                for (_, mut visibility, _) in queries.p1().iter_mut() {
+                for (_, mut visibility, _, _) in queries.p1().iter_mut() {
                     *visibility = Visibility::Hidden;
                 }
 
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, img) => {
-                for (entity, mut v, _) in queries.p1().iter_mut() {
+                for (_, mut v, mut sprite, _) in queries.p1().iter_mut() {
                     let image_name = format!("{}.png", img);
                     let image_path = base_path.join(image_name);
-                    let image: Handle<Image> = assets.load(image_path);
-                    commands.entity(entity).insert(image);
+                    *sprite = Sprite::from_image(assets.load(image_path));
                     *v = Visibility::Visible;
                 }
 
@@ -431,27 +387,11 @@ fn handle_new_node(
             }
             AST::Say(_, who, what) => {
                 for (_, _, mut text, _) in queries.p2().iter_mut() {
-                    *text = Text::from_section(
-                        what.clone(),
-                        TextStyle {
-                            font: assets.load("font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    );
-                    // *visibility = Visibility::Hidden;
+                    *text = TextSpan::new(what.clone());
                 }
 
                 for (_, _, mut text, _) in queries.p3().iter_mut() {
-                    *text = Text::from_section(
-                        who.clone().unwrap_or_default(),
-                        TextStyle {
-                            font: assets.load("font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    );
-                    // *visibility = Visibility::Hidden;
+                    *text = TextSpan::new(who.clone().unwrap_or_default());
                 }
 
                 ew_hide_text_node.send(EventHideTextNode {});
@@ -464,6 +404,8 @@ fn handle_new_node(
     }
 }
 
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 fn handle_press_key(
     novel_settings: Res<NovelSettings>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -478,6 +420,8 @@ fn handle_press_key(
     }
 }
 
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 fn handle_show_text_node(
     mut er_show_text_node: EventReader<EventShowTextNode>,
     mut paramset: ParamSet<(
@@ -496,6 +440,8 @@ fn handle_show_text_node(
     }
 }
 
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
 fn handle_hide_text_node(
     mut er_show_text_node: EventReader<EventHideTextNode>,
     mut paramset: ParamSet<(

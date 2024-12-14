@@ -1,45 +1,20 @@
 [package]
 edition = "2021"
 name = "bevy_novel"
-version = "0.0.8"
+version = "0.15.0"
 license = "MIT OR Apache-2.0"
 description = "Visual Novels with Bevy"
 keywords = ["ai", "visual-novel", "renpy", "rpy"]
 repository = "https://github.com/stillonearth/bevy_novel"
 
 [dependencies]
-bevy = { version = "0.14", default-features = false, features = [
-    "animation",
-    "bevy_asset",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_gilrs",
-    "bevy_gizmos",
-    "bevy_gltf",
-    "bevy_pbr",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_winit",
-    "default_font",
-    "hdr",
-    "jpeg",
-    "multi_threaded",
-    "png",
-    "smaa_luts",
-    "sysinfo_plugin",
-    "tonemapping_luts",
-    "webgl2",
-    "x11",
-] }
-bevy_lunex = { version = "0.2.4" }
-bevy-inspector-egui = "0.27.0"
+bevy = { version = "0.15" }
 regex = "1.11.1"
 renpy_parser= "0.0.7"
-bevy_kira_audio = { version = "0.20", features = ["ogg", "mp3", "wav"]}
+bevy_kira_audio = { version = "0.21", features = ["ogg", "mp3", "wav"]}
+
+[dev-dependencies]
+bevy-inspector-egui = "0.28.0"
 
 [profile.dev]
 opt-level = 3
