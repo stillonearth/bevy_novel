@@ -12,7 +12,7 @@ label chapter1_1:
 
     show character komarito
 
-    "Bevy seems like the perfect choice for this project"
+    komarito "Bevy seems like the perfect choice for this project"
 
     "I'm planning on using Rust as my programming language"
 
