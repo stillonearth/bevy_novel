@@ -128,7 +128,7 @@ fn setup(mut commands: Commands) {
         ))
         .with_children(|p| {
             p.spawn((
-                TextSpan::new("text novel who"),
+                TextSpan::new("),
                 NovelTextWho {},
                 Name::new("Text Who"),
                 TextLayout::new_with_justify(JustifyText::Left),
@@ -142,7 +142,7 @@ fn setup(mut commands: Commands) {
             ));
 
             p.spawn((
-                TextSpan::new("text novel what"),
+                TextSpan::new(""),
                 NovelTextWhat {},
                 Name::new("Text What"),
                 TextLayout::new_with_justify(JustifyText::Left),
