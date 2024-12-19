@@ -8,3 +8,9 @@
 https://github.com/user-attachments/assets/aa9c7058-b641-4f36-b42f-902b2a8bbc0e
 
 Visual novel plugin for Bevy. Because your indie games deserve narration!
+
+## Dependencies
+
+Plugin doesn't initialize but require following plugins be initilized at top-level app:
+
+- [bevy_defer](https://github.com/mintlu8/bevy_defer)

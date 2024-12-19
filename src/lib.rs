@@ -6,9 +6,9 @@ use std::str::FromStr;
 
 use bevy::prelude::*;
 use bevy_defer::AsyncCommandsExtension;
-use bevy_defer::AsyncPlugin;
 use bevy_defer::AsyncWorld;
 use bevy_kira_audio::prelude::*;
+
 use renpy_parser::parse_scenario_from_string;
 use renpy_parser::parsers::{inject_node, AST};
 
@@ -88,7 +88,6 @@ pub struct NovelSettings {
 impl Plugin for NovelPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AudioPlugin)
-            .add_plugins((AsyncPlugin::default_settings()))
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
@@ -126,8 +125,32 @@ impl Plugin for NovelPlugin {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn((Sprite { ..default() }, NovelBackground {}, ZIndex(1)));
-    commands.spawn((Sprite { ..default() }, NovelImage {}, ZIndex(2)));
+    commands.spawn((
+        Name::new("Character Image"),
+        Sprite { ..default() },
+        NovelImage {},
+        ZIndex(1),
+        Node {
+            position_type: PositionType::Absolute,
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
+    commands.spawn((
+        Name::new("Background Image"),
+        Sprite { ..default() },
+        NovelBackground {},
+        ZIndex(2),
+        Node {
+            position_type: PositionType::Absolute,
+            width: Val::Auto,
+            height: Val::Auto,
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
 
     commands
         .spawn((
@@ -386,6 +409,7 @@ fn handle_new_node(
 
                 if let Some(img) = image {
                     for (_, mut v, mut sprite, _) in queries.p0().iter_mut() {
+                        // todo introduce delay for image load
                         let image_name = format!("{}.png", img);
                         let image_path = base_path.join(image_name);
                         *sprite = Sprite::from_image(assets.load(image_path));
@@ -401,6 +425,7 @@ fn handle_new_node(
             }
             AST::Show(_, img) => {
                 for (_, mut v, mut sprite, _) in queries.p1().iter_mut() {
+                    // todo introduce delay for image load
                     let image_name = format!("{}.png", img);
                     let image_path = base_path.join(image_name);
                     *sprite = Sprite::from_image(assets.load(image_path));
