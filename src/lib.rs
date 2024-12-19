@@ -1,4 +1,5 @@
 pub mod events;
+pub mod rpy_asset_loader;
 
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -108,7 +109,8 @@ impl Plugin for NovelPlugin {
             .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>()
             .insert_resource(MusicHandle(None))
-            .insert_resource(NovelSettings::default());
+            .insert_resource(NovelSettings::default())
+            .init_asset_loader::<rpy_asset_loader::BlobAssetLoader>();
     }
 }
 

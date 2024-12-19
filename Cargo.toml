@@ -10,8 +10,10 @@ repository = "https://github.com/stillonearth/bevy_novel"
 [dependencies]
 bevy = { version = "0.15" }
 regex = "1.11.1"
-renpy_parser= "0.0.7"
+renpy_parser= { version = "0.0.8" }
 bevy_kira_audio = { version = "0.21", features = ["ogg", "mp3", "wav"]}
+thiserror = "2.0.8"
+serde = "1.0.216"
 
 [dev-dependencies]
 bevy-inspector-egui = "0.28.0"
