@@ -3,6 +3,8 @@ use std::str::FromStr;
 use bevy::prelude::*;
 use renpy_parser::parsers::AST;
 
+use crate::rpy_asset_loader::Blob;
+
 #[derive(Clone, Event)]
 pub struct Scene {
     pub image: String,
@@ -25,6 +27,17 @@ pub struct EventLabel {
 
 #[derive(Clone, Event)]
 pub struct EventReturn {}
+
+#[derive(Clone, Event)]
+pub struct EventLoadScenario {
+    pub filename: String,
+}
+
+#[derive(Clone, Event)]
+pub struct EventScenarioLoaded {
+    pub blob_handle: Handle<Blob>,
+    pub filename: String,
+}
 
 #[derive(Clone, Event)]
 pub struct EventStartScenario {

@@ -5,10 +5,15 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use bevy::prelude::*;
+use bevy_defer::AsyncCommandsExtension;
+use bevy_defer::AsyncPlugin;
+use bevy_defer::AsyncWorld;
 use bevy_kira_audio::prelude::*;
+use renpy_parser::parse_scenario_from_string;
 use renpy_parser::parsers::{inject_node, AST};
 
 use events::*;
+use rpy_asset_loader::Blob;
 
 #[derive(Component)]
 struct NovelBackground {}
@@ -83,10 +88,13 @@ pub struct NovelSettings {
 impl Plugin for NovelPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(AudioPlugin)
+            .add_plugins((AsyncPlugin::default_settings()))
             .add_systems(Startup, setup)
             .add_systems(
                 Update,
                 (
+                    handle_scenario_loaded,
+                    handle_load_scenario,
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
@@ -96,21 +104,24 @@ impl Plugin for NovelPlugin {
                     handle_hide_text_node,
                 ),
             )
-            .add_event::<EventShow>()
+            .add_event::<EventHandleNode>()
+            .add_event::<EventHideTextNode>()
             .add_event::<EventJump>()
             .add_event::<EventLabel>()
+            .add_event::<EventLoadScenario>()
+            .add_event::<EventPlayAudio>()
             .add_event::<EventReturn>()
             .add_event::<EventSay>()
+            .add_event::<EventScenarioLoaded>()
+            .add_event::<EventShow>()
+            .add_event::<EventShowTextNode>()
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
-            .add_event::<EventShowTextNode>()
-            .add_event::<EventHideTextNode>()
-            .add_event::<EventHandleNode>()
-            .add_event::<EventPlayAudio>()
             .init_resource::<NovelData>()
             .insert_resource(MusicHandle(None))
             .insert_resource(NovelSettings::default())
-            .init_asset_loader::<rpy_asset_loader::BlobAssetLoader>();
+            .init_asset_loader::<rpy_asset_loader::BlobAssetLoader>()
+            .init_asset::<rpy_asset_loader::Blob>();
     }
 }
 
@@ -191,6 +202,42 @@ fn handle_start_scenario(
         novel_data.current_index = 0;
         novel_data.ast = event.ast.clone();
         ew_event_switch_next_node.send(EventSwitchNextNode {});
+    }
+}
+
+fn handle_load_scenario(
+    mut commands: Commands,
+    mut er_load_scenario: EventReader<EventLoadScenario>,
+    asset_server: Res<AssetServer>,
+) {
+    for event in er_load_scenario.read() {
+        let blob_handle: Handle<Blob> = asset_server.load(event.filename.clone());
+        let filename = event.filename.clone();
+
+        commands.spawn_task(|| async move {
+            // there should be a callback when resource is loaded
+            AsyncWorld.sleep(0.01).await;
+            AsyncWorld.send_event(EventScenarioLoaded {
+                blob_handle,
+                filename,
+            })?;
+            Ok(())
+        });
+    }
+}
+
+fn handle_scenario_loaded(
+    mut er_scenario_loaded: EventReader<EventScenarioLoaded>,
+    mut ew_start_scenario: EventWriter<EventStartScenario>,
+    blob_assets: Res<Assets<Blob>>,
+) {
+    for event in er_scenario_loaded.read() {
+        if let Some(blob) = blob_assets.get(event.blob_handle.id()) {
+            let content = std::str::from_utf8(&blob.bytes).unwrap();
+            let (ast, _) = parse_scenario_from_string(content, "filename.rpy").unwrap();
+
+            ew_start_scenario.send(EventStartScenario { ast });
+        }
     }
 }
 
