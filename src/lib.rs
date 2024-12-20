@@ -9,11 +9,10 @@ use bevy_defer::AsyncCommandsExtension;
 use bevy_defer::AsyncWorld;
 use bevy_kira_audio::prelude::*;
 
-use renpy_parser::parse_scenario_from_string;
 use renpy_parser::parsers::{inject_node, AST};
 
 use events::*;
-use rpy_asset_loader::Blob;
+use rpy_asset_loader::Rpy;
 
 #[derive(Component)]
 struct NovelBackground {}
@@ -119,8 +118,8 @@ impl Plugin for NovelPlugin {
             .init_resource::<NovelData>()
             .insert_resource(MusicHandle(None))
             .insert_resource(NovelSettings::default())
-            .init_asset_loader::<rpy_asset_loader::BlobAssetLoader>()
-            .init_asset::<rpy_asset_loader::Blob>();
+            .init_asset_loader::<rpy_asset_loader::RpyAssetLoader>()
+            .init_asset::<rpy_asset_loader::Rpy>();
     }
 }
 
@@ -231,14 +230,17 @@ fn handle_start_scenario(
 fn handle_load_scenario(
     mut commands: Commands,
     mut er_load_scenario: EventReader<EventLoadScenario>,
+    // mut ew_scenario_loaded: EventReader<EventScenarioLoaded>,
     asset_server: Res<AssetServer>,
 ) {
     for event in er_load_scenario.read() {
-        let blob_handle: Handle<Blob> = asset_server.load(event.filename.clone());
+        let blob_handle: Handle<Rpy> = asset_server.load(event.filename.clone());
         let filename = event.filename.clone();
 
         commands.spawn_task(|| async move {
-            // there should be a callback when resource is loaded
+            // TODO: remove Async / event based resource loading
+            // Bad Design
+
             AsyncWorld.sleep(0.01).await;
             AsyncWorld.send_event(EventScenarioLoaded {
                 blob_handle,
@@ -252,14 +254,11 @@ fn handle_load_scenario(
 fn handle_scenario_loaded(
     mut er_scenario_loaded: EventReader<EventScenarioLoaded>,
     mut ew_start_scenario: EventWriter<EventStartScenario>,
-    blob_assets: Res<Assets<Blob>>,
+    rpy_assets: Res<Assets<Rpy>>,
 ) {
     for event in er_scenario_loaded.read() {
-        if let Some(blob) = blob_assets.get(event.blob_handle.id()) {
-            let content = std::str::from_utf8(&blob.bytes).unwrap();
-            let (ast, _) = parse_scenario_from_string(content, "filename.rpy").unwrap();
-
-            ew_start_scenario.send(EventStartScenario { ast });
+        if let Some(rpy) = rpy_assets.get(event.blob_handle.id()) {
+            ew_start_scenario.send(EventStartScenario { ast: rpy.0.clone() });
         }
     }
 }
