@@ -5,14 +5,11 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use bevy::prelude::*;
-use bevy_defer::AsyncCommandsExtension;
-use bevy_defer::AsyncWorld;
 use bevy_kira_audio::prelude::*;
 
 use renpy_parser::parsers::{inject_node, AST};
 
 use events::*;
-use rpy_asset_loader::Rpy;
 
 #[derive(Component)]
 struct NovelBackground {}
@@ -91,8 +88,6 @@ impl Plugin for NovelPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_scenario_loaded,
-                    handle_load_scenario,
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
@@ -106,11 +101,9 @@ impl Plugin for NovelPlugin {
             .add_event::<EventHideTextNode>()
             .add_event::<EventJump>()
             .add_event::<EventLabel>()
-            .add_event::<EventLoadScenario>()
             .add_event::<EventPlayAudio>()
             .add_event::<EventReturn>()
             .add_event::<EventSay>()
-            .add_event::<EventScenarioLoaded>()
             .add_event::<EventShow>()
             .add_event::<EventShowTextNode>()
             .add_event::<EventStartScenario>()
@@ -224,42 +217,6 @@ fn handle_start_scenario(
         novel_data.current_index = 0;
         novel_data.ast = event.ast.clone();
         ew_event_switch_next_node.send(EventSwitchNextNode {});
-    }
-}
-
-fn handle_load_scenario(
-    mut commands: Commands,
-    mut er_load_scenario: EventReader<EventLoadScenario>,
-    // mut ew_scenario_loaded: EventReader<EventScenarioLoaded>,
-    asset_server: Res<AssetServer>,
-) {
-    for event in er_load_scenario.read() {
-        let blob_handle: Handle<Rpy> = asset_server.load(event.filename.clone());
-        let filename = event.filename.clone();
-
-        commands.spawn_task(|| async move {
-            // TODO: remove Async / event based resource loading
-            // Bad Design
-
-            AsyncWorld.sleep(0.01).await;
-            AsyncWorld.send_event(EventScenarioLoaded {
-                blob_handle,
-                filename,
-            })?;
-            Ok(())
-        });
-    }
-}
-
-fn handle_scenario_loaded(
-    mut er_scenario_loaded: EventReader<EventScenarioLoaded>,
-    mut ew_start_scenario: EventWriter<EventStartScenario>,
-    rpy_assets: Res<Assets<Rpy>>,
-) {
-    for event in er_scenario_loaded.read() {
-        if let Some(rpy) = rpy_assets.get(event.blob_handle.id()) {
-            ew_start_scenario.send(EventStartScenario { ast: rpy.0.clone() });
-        }
     }
 }
 
