@@ -1,6 +1,7 @@
 pub mod events;
 pub mod rpy_asset_loader;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::str::FromStr;
 
@@ -31,6 +32,7 @@ struct MusicHandle(Option<Handle<AudioInstance>>);
 pub struct NovelData {
     pub ast: Vec<AST>,
     current_index: usize,
+    pub cached_images: HashMap<String, Sprite>,
 }
 
 impl NovelData {
@@ -52,6 +54,10 @@ impl NovelData {
                 }
             }
         }
+    }
+
+    pub fn write_image_cache(&mut self, image_name: String, sprite: Sprite) {
+        self.cached_images.insert(image_name, sprite);
     }
 
     pub fn push_scene_node(&mut self, image: String, index: usize) {
@@ -351,6 +357,7 @@ fn handle_new_node(
         Query<(Entity, &mut Visibility, &mut TextSpan, &NovelTextWho)>,
     )>,
     assets: Res<AssetServer>,
+    novel_data: Res<NovelData>,
 ) {
     let base_path = PathBuf::from(&plugin_settings.assets_path);
 
@@ -365,10 +372,13 @@ fn handle_new_node(
 
                 if let Some(img) = image {
                     for (_, mut v, mut sprite, _) in queries.p0().iter_mut() {
-                        // todo introduce delay for image load
                         let image_name = format!("{}.png", img);
-                        let image_path = base_path.join(image_name);
-                        *sprite = Sprite::from_image(assets.load(image_path));
+                        if let Some(spr) = novel_data.cached_images.get(&image_name) {
+                            *sprite = spr.clone();
+                        } else {
+                            let image_path = base_path.join(image_name);
+                            *sprite = Sprite::from_image(assets.load(image_path));
+                        }
                         *v = Visibility::Visible;
                     }
                 }
