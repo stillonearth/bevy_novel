@@ -57,6 +57,7 @@ impl NovelData {
     }
 
     pub fn write_image_cache(&mut self, image_name: String, sprite: Sprite) {
+        println!("writing cache image: {}", image_name);
         self.cached_images.insert(image_name, sprite);
     }
 
@@ -372,10 +373,12 @@ fn handle_new_node(
 
                 if let Some(img) = image {
                     for (_, mut v, mut sprite, _) in queries.p0().iter_mut() {
-                        let image_name = format!("{}.png", img);
-                        if let Some(spr) = novel_data.cached_images.get(&image_name) {
+                        println!("getting image: {}", img);
+
+                        if let Some(spr) = novel_data.cached_images.get(&img) {
                             *sprite = spr.clone();
                         } else {
+                            let image_name = format!("{}.png", img);
                             let image_path = base_path.join(image_name);
                             *sprite = Sprite::from_image(assets.load(image_path));
                         }
