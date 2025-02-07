@@ -22,7 +22,6 @@ fn main() {
 
 fn load_scenario(mut commands: Commands, asset_server: Res<AssetServer>) {
     let scenario_handle = ScenarioHandle(asset_server.load("script.rpy"));
-    println!("loading");
     commands.insert_resource(scenario_handle);
 }
 
@@ -37,7 +36,6 @@ fn start_visual_novel(
     mut state: ResMut<NextState<AppState>>,
 ) {
     if let Some(rpy) = rpy_assets.get(scenario.id()) {
-        println!("im here");
         ew_start_scenario.send(EventStartScenario { ast: rpy.0.clone() });
         state.set(AppState::Novel);
     }
