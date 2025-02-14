@@ -79,3 +79,9 @@ pub struct EventShowTextNode {}
 
 #[derive(Event)]
 pub struct EventHideTextNode {}
+
+#[derive(Event)]
+pub struct EventShowImageNode {}
+
+#[derive(Event)]
+pub struct EventHideImageNode {}

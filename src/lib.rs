@@ -19,6 +19,9 @@ struct NovelBackground {}
 struct NovelImage;
 
 #[derive(Component)]
+pub struct NovelText;
+
+#[derive(Component)]
 struct NovelTextWhat;
 
 #[derive(Component)]
@@ -36,6 +39,8 @@ pub struct NovelData {
 }
 
 impl NovelData {
+    // Manipulate Scenario
+
     pub fn push_text_node(&mut self, who: Option<String>, what: String, index: usize) {
         let node = AST::Say(index, who, what);
         self.ast = inject_node(self.ast.clone(), node.clone());
@@ -56,9 +61,44 @@ impl NovelData {
         }
     }
 
-    pub fn write_image_cache(&mut self, image_name: String, sprite: Sprite) {
-        println!("writing cache image: {}", image_name);
-        self.cached_images.insert(image_name, sprite);
+    pub fn push_show_node(&mut self, image: String, index: usize) {
+        let node = AST::Show(index, image);
+        self.ast = inject_node(self.ast.clone(), node.clone());
+        for a in self.ast.iter_mut() {
+            if let AST::Label(node_index, label, node_ast, opts) = a {
+                let first_index = node_ast.first().unwrap().index();
+                let last_index = node_ast.last().unwrap().index();
+
+                if index >= first_index && index <= last_index {
+                    *a = AST::Label(
+                        *node_index,
+                        label.clone(),
+                        inject_node(node_ast.clone(), node.clone()).clone(),
+                        opts.clone(),
+                    )
+                }
+            }
+        }
+    }
+
+    pub fn push_hide_node(&mut self, image: String, index: usize) {
+        let node = AST::Hide(index, image);
+        self.ast = inject_node(self.ast.clone(), node.clone());
+        for a in self.ast.iter_mut() {
+            if let AST::Label(node_index, label, node_ast, opts) = a {
+                let first_index = node_ast.first().unwrap().index();
+                let last_index = node_ast.last().unwrap().index();
+
+                if index >= first_index && index <= last_index {
+                    *a = AST::Label(
+                        *node_index,
+                        label.clone(),
+                        inject_node(node_ast.clone(), node.clone()).clone(),
+                        opts.clone(),
+                    )
+                }
+            }
+        }
     }
 
     pub fn push_scene_node(&mut self, image: String, index: usize) {
@@ -79,6 +119,12 @@ impl NovelData {
                 }
             }
         }
+    }
+
+    // Manipulate Images
+
+    pub fn write_image_cache(&mut self, image_name: String, sprite: Sprite) {
+        self.cached_images.insert(image_name, sprite);
     }
 }
 
@@ -102,9 +148,14 @@ impl Plugin for NovelPlugin {
                     handle_play_audio,
                     handle_show_text_node,
                     handle_hide_text_node,
-                ),
+                    handle_hide_image_node,
+                    handle_show_image_node,
+                    apply_deferred,
+                )
+                    .chain(),
             )
             .add_event::<EventHandleNode>()
+            .add_event::<EventHideImageNode>()
             .add_event::<EventHideTextNode>()
             .add_event::<EventJump>()
             .add_event::<EventLabel>()
@@ -112,6 +163,7 @@ impl Plugin for NovelPlugin {
             .add_event::<EventReturn>()
             .add_event::<EventSay>()
             .add_event::<EventShow>()
+            .add_event::<EventShowImageNode>()
             .add_event::<EventShowTextNode>()
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
@@ -123,23 +175,23 @@ impl Plugin for NovelPlugin {
     }
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Name::new("Character Image"),
-        Sprite { ..default() },
+        Sprite::from_image(asset_server.load("character_empty.png")),
         NovelImage {},
         ZIndex(1),
         Node {
             position_type: PositionType::Absolute,
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            width: Val::Auto,
+            height: Val::Auto,
             ..default()
         },
         Visibility::Hidden,
     ));
     commands.spawn((
         Name::new("Background Image"),
-        Sprite { ..default() },
+        Sprite::from_image(asset_server.load("background_empty.png")),
         NovelBackground {},
         ZIndex(2),
         Node {
@@ -154,6 +206,7 @@ fn setup(mut commands: Commands) {
     commands
         .spawn((
             Text::default(),
+            NovelText,
             Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(20.0),
@@ -350,7 +403,7 @@ fn handle_new_node(
     mut ew_event_switch_next_node: EventWriter<EventSwitchNextNode>,
     mut ew_play_audio: EventWriter<EventPlayAudio>,
     mut ew_show_text_node: EventWriter<EventShowTextNode>,
-    mut ew_hide_text_node: EventWriter<EventHideTextNode>,
+    mut ew_hide_image_node: EventWriter<EventHideImageNode>,
     mut queries: ParamSet<(
         Query<(Entity, &mut Visibility, &mut Sprite, &mut NovelBackground)>,
         Query<(Entity, &mut Visibility, &mut Sprite, &mut NovelImage)>,
@@ -369,12 +422,8 @@ fn handle_new_node(
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Scene(_, image, _layer) => {
-                // insert images
-
                 if let Some(img) = image {
                     for (_, mut v, mut sprite, _) in queries.p0().iter_mut() {
-                        println!("getting image: {}", img);
-
                         if let Some(spr) = novel_data.cached_images.get(&img) {
                             *sprite = spr.clone();
                         } else {
@@ -386,18 +435,18 @@ fn handle_new_node(
                     }
                 }
 
-                for (_, mut visibility, _, _) in queries.p1().iter_mut() {
-                    *visibility = Visibility::Hidden;
-                }
-
+                ew_hide_image_node.send(EventHideImageNode {});
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Show(_, img) => {
                 for (_, mut v, mut sprite, _) in queries.p1().iter_mut() {
-                    // todo introduce delay for image load
-                    let image_name = format!("{}.png", img);
-                    let image_path = base_path.join(image_name);
-                    *sprite = Sprite::from_image(assets.load(image_path));
+                    if let Some(spr) = novel_data.cached_images.get(&img) {
+                        *sprite = spr.clone();
+                    } else {
+                        let image_name = format!("{}.png", img);
+                        let image_path = base_path.join(image_name);
+                        *sprite = Sprite::from_image(assets.load(image_path));
+                    }
                     *v = Visibility::Visible;
                 }
 
@@ -437,7 +486,6 @@ fn handle_new_node(
                     *text = TextSpan::new(who.clone().unwrap_or_default());
                 }
 
-                ew_hide_text_node.send(EventHideTextNode {});
                 ew_show_text_node.send(EventShowTextNode {});
             }
             _ => {
@@ -467,17 +515,10 @@ fn handle_press_key(
 #[allow(clippy::too_many_arguments)]
 fn handle_show_text_node(
     mut er_show_text_node: EventReader<EventShowTextNode>,
-    mut paramset: ParamSet<(
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
-    )>,
+    mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelText)>,)>,
 ) {
     for _ in er_show_text_node.read() {
-        for (_, mut visibility, _, _) in paramset.p0().iter_mut() {
-            *visibility = Visibility::Visible;
-        }
-
-        for (_, mut visibility, _, _) in paramset.p1().iter_mut() {
+        for (_, mut visibility, _) in paramset.p0().iter_mut() {
             *visibility = Visibility::Visible;
         }
     }
@@ -487,17 +528,36 @@ fn handle_show_text_node(
 #[allow(clippy::too_many_arguments)]
 fn handle_hide_text_node(
     mut er_show_text_node: EventReader<EventHideTextNode>,
-    mut paramset: ParamSet<(
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWhat)>,
-        Query<(Entity, &mut Visibility, &mut Text, &NovelTextWho)>,
-    )>,
+    mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelText)>,)>,
 ) {
     for _ in er_show_text_node.read() {
-        for (_, mut visibility, _, _) in paramset.p0().iter_mut() {
+        for (_, mut visibility, _) in paramset.p0().iter_mut() {
             *visibility = Visibility::Hidden;
         }
+    }
+}
 
-        for (_, mut visibility, _, _) in paramset.p1().iter_mut() {
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
+fn handle_show_image_node(
+    mut er_show_text_node: EventReader<EventShowTextNode>,
+    mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelImage)>,)>,
+) {
+    for _ in er_show_text_node.read() {
+        for (_, mut visibility, _) in paramset.p0().iter_mut() {
+            *visibility = Visibility::Visible;
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
+#[allow(clippy::too_many_arguments)]
+fn handle_hide_image_node(
+    mut er_show_text_node: EventReader<EventHideTextNode>,
+    mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelImage)>,)>,
+) {
+    for _ in er_show_text_node.read() {
+        for (_, mut visibility, _) in paramset.p0().iter_mut() {
             *visibility = Visibility::Hidden;
         }
     }
