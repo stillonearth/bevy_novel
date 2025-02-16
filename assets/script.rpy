@@ -8,13 +8,15 @@ label chapter1_1:
 
     scene background
 
-    "I've always loved visual novels"
-
     show character komarito
+
+    "I've always loved visual novels"
 
     komarito "Bevy seems like the perfect choice for this project"
 
     "I'm planning on using Rust as my programming language"
+
+    hide character komarito
 
     "It's a bit intimidating, but I'm up for the challenge"
 

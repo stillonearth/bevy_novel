@@ -148,9 +148,8 @@ impl Plugin for NovelPlugin {
                     handle_play_audio,
                     handle_show_text_node,
                     handle_hide_text_node,
-                    handle_hide_image_node,
                     handle_show_image_node,
-                    apply_deferred,
+                    handle_hide_image_node,
                 )
                     .chain(),
             )
@@ -178,7 +177,7 @@ impl Plugin for NovelPlugin {
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Name::new("Character Image"),
-        Sprite::from_image(asset_server.load("character_empty.png")),
+        Sprite::default(),
         NovelImage {},
         ZIndex(1),
         Node {
@@ -191,7 +190,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
     commands.spawn((
         Name::new("Background Image"),
-        Sprite::from_image(asset_server.load("background_empty.png")),
+        Sprite::default(),
         NovelBackground {},
         ZIndex(2),
         Node {
@@ -453,6 +452,7 @@ fn handle_new_node(
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Hide(_, _) => {
+                ew_hide_image_node.send(EventHideImageNode {});
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Label(_, _, _, _) => {
@@ -540,7 +540,7 @@ fn handle_hide_text_node(
 #[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_arguments)]
 fn handle_show_image_node(
-    mut er_show_text_node: EventReader<EventShowTextNode>,
+    mut er_show_text_node: EventReader<EventShowImageNode>,
     mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelImage)>,)>,
 ) {
     for _ in er_show_text_node.read() {
@@ -553,7 +553,7 @@ fn handle_show_image_node(
 #[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_arguments)]
 fn handle_hide_image_node(
-    mut er_show_text_node: EventReader<EventHideTextNode>,
+    mut er_show_text_node: EventReader<EventHideImageNode>,
     mut paramset: ParamSet<(Query<(Entity, &mut Visibility, &NovelImage)>,)>,
 ) {
     for _ in er_show_text_node.read() {
