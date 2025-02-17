@@ -10,9 +10,9 @@ label chapter1_1:
 
     show character komarito
 
-    "I've always loved visual novels"
+    komarov "I've always loved visual novels"
 
-    komarito "Bevy seems like the perfect choice for this project"
+    komarov "Bevy seems like the perfect choice for this project"
 
     "I'm planning on using Rust as my programming language"
 
