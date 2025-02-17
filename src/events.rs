@@ -336,7 +336,7 @@ pub fn scale_images(
             let window = window.unwrap();
             let window_height = window.height();
 
-            let image_new_height = 0.75 * window_height;
+            let image_new_height = 1.0 * window_height;
             let image_scale = image_new_height as f32 / (sprite_height as f32);
 
             let image_transform = Transform::from_scale(Vec3::ONE * image_scale);
