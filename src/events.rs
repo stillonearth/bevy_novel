@@ -292,7 +292,7 @@ pub fn handle_new_node(
 pub fn scale_images(
     mut commands: Commands,
     mut queries: ParamSet<(
-        Query<(Entity, &mut Sprite, &mut Node, &mut NovelBackground)>,
+        Query<(Entity, &mut Sprite, &mut NovelBackground)>,
         Query<(Entity, &mut Sprite, &mut Node, &mut NovelImage)>,
     )>,
     images: Res<Assets<Image>>,
@@ -318,6 +318,29 @@ pub fn scale_images(
             let image_transform = Transform::from_scale(Vec3::ONE * image_scale);
 
             node.margin.top = Val::Px(-(window_height - image_new_height) / 2.0);
+            commands.entity(entity).insert(image_transform);
+        }
+    }
+
+    for (entity, sprite, _) in queries.p0().iter_mut() {
+        // Manually scaling image width and height in proportion to window
+        let image_handle = sprite.image.clone();
+
+        if let Some(image) = images.get(&image_handle) {
+            let sprite_height = image.height();
+
+            let window = windows.get_single();
+            if window.is_err() {
+                return;
+            }
+            let window = window.unwrap();
+            let window_height = window.height();
+
+            let image_new_height = 0.75 * window_height;
+            let image_scale = image_new_height as f32 / (sprite_height as f32);
+
+            let image_transform = Transform::from_scale(Vec3::ONE * image_scale);
+
             commands.entity(entity).insert(image_transform);
         }
     }
