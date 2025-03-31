@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use bevy::{prelude::*, render::view::window};
+use bevy::prelude::*;
 use renpy_parser::parsers::AST;
 
 use bevy_kira_audio::prelude::*;
@@ -250,9 +250,6 @@ pub fn handle_new_node(
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::Label(_, _, _, _) => {
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
-            }
-            AST::Init(_, _, _) => {
                 ew_event_switch_next_node.send(EventSwitchNextNode {});
             }
             AST::GameMechanic(_, _) => {

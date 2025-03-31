@@ -27,12 +27,12 @@ pub struct NovelTextWho;
 pub struct NovelPlugin;
 
 #[derive(Resource, Clone)]
-struct MusicHandle(Option<Handle<AudioInstance>>);
+pub struct MusicHandle(Option<Handle<AudioInstance>>);
 
 #[derive(Resource, Default)]
 pub struct NovelData {
     pub ast: Vec<AST>,
-    current_index: usize,
+    pub current_index: usize,
     pub cached_images: HashMap<String, Sprite>,
 }
 
@@ -134,8 +134,7 @@ pub struct NovelSettings {
 
 impl Plugin for NovelPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(AudioPlugin)
-            .add_systems(Startup, setup)
+        app.add_systems(Startup, setup)
             .add_systems(
                 Update,
                 (
@@ -174,7 +173,7 @@ impl Plugin for NovelPlugin {
     }
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
     commands.spawn((
         Name::new("Character Image"),
         Sprite::default(),
@@ -212,33 +211,34 @@ fn setup(mut commands: Commands) {
                 left: Val::Px(20.0),
                 ..default()
             },
+            Name::new("Novel Text"),
         ))
         .with_children(|p| {
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWho {},
-                Name::new("Text Who"),
+                Name::new("Novel Text Who"),
                 TextLayout::new_with_justify(JustifyText::Left),
                 Visibility::Visible,
             ));
 
             p.spawn((
                 TextSpan::new("\n"),
-                Name::new("Text Span"),
+                Name::new("Novel Text Newline"),
                 TextLayout::new_with_justify(JustifyText::Left),
             ));
 
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWhat {},
-                Name::new("Text What"),
+                Name::new("Novel Text What"),
                 TextLayout::new_with_justify(JustifyText::Left),
                 Visibility::Visible,
             ));
         });
 }
 
-fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
+pub fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
     for ast in ast.iter() {
         let ast_index = match ast {
             AST::Return(i, _) => *i,
@@ -247,13 +247,13 @@ fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::Show(i, _) => *i,
             AST::Hide(i, _) => *i,
             AST::Label(i, _, _, _) => *i,
-            AST::Init(i, _, _) => *i,
             AST::Say(i, _, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
             AST::GameMechanic(i, _) => *i,
             AST::LLMGenerate(i, _, _) => *i,
+            AST::Comment(i, _) => *i,
             AST::Error => panic!(),
         };
 
@@ -275,13 +275,13 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::Show(i, _) => *i,
             AST::Hide(i, _) => *i,
             AST::Label(i, _, _, _) => *i,
-            AST::Init(i, _, _) => *i,
             AST::Say(i, _, _) => *i,
             AST::Play(i, _, _) => *i,
             AST::Define(i, _) => *i,
             AST::Stop(i, _, _, _) => *i,
             AST::GameMechanic(i, _) => *i,
             AST::LLMGenerate(i, _, _) => *i,
+            AST::Comment(i, _) => *i,
             AST::Error => panic!(),
         })
         .collect();
@@ -289,9 +289,6 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
     for ast in ast {
         match ast {
             AST::Label(_, _, vec, _) => {
-                indices.extend_from_slice(list_ast_indices(vec).as_slice());
-            }
-            AST::Init(_, vec, _) => {
                 indices.extend_from_slice(list_ast_indices(vec).as_slice());
             }
             _ => {}
