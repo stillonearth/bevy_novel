@@ -131,7 +131,7 @@ pub fn handle_start_scenario(
     for event in er_start_scenario.read() {
         novel_data.current_index = 0;
         novel_data.ast = event.ast.clone();
-        ew_event_switch_next_node.send(EventSwitchNextNode {});
+        ew_event_switch_next_node.write(EventSwitchNextNode {});
     }
 }
 
@@ -159,7 +159,7 @@ pub fn handle_switch_next_node(
 
             let next_element = find_element_with_index(novel_data.ast.clone(), next_index);
             if next_element.is_some() {
-                ew_handle_node.send(EventHandleNode {
+                ew_handle_node.write(EventHandleNode {
                     ast: next_element.unwrap().clone(),
                 });
                 switched = true;
@@ -175,7 +175,7 @@ pub fn handle_switch_next_node(
                 };
 
                 if next_element.is_some() && next_element.is_some() {
-                    ew_handle_node.send(EventHandleNode {
+                    ew_handle_node.write(EventHandleNode {
                         ast: next_element.unwrap().clone(),
                     });
                     switched = true;
@@ -211,7 +211,7 @@ pub fn handle_new_node(
         match event.ast.clone() {
             AST::Return(_, _) => {}
             AST::Jump(_, _, _) => {
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::Scene(_, image, _layer) => {
                 if let Some(img) = image {
@@ -219,7 +219,10 @@ pub fn handle_new_node(
                         if let Some(spr) = novel_data.cached_images.get(&img) {
                             *sprite = spr.clone();
                         } else {
-                            let image_name = format!("{}.png", img);
+                            let mut image_name = img.clone();
+                            if !(img.ends_with(".png") || img.ends_with(".jpeg")) {
+                                image_name = format!("{}.png", img);
+                            }
                             let image_path = base_path.join(image_name);
                             *sprite = Sprite::from_image(assets.load(image_path));
                         }
@@ -227,8 +230,8 @@ pub fn handle_new_node(
                     }
                 }
 
-                ew_hide_image_node.send(EventHideImageNode {});
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_hide_image_node.write(EventHideImageNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::Show(_, img) => {
                 for (_, mut v, mut sprite, _) in queries.p1().iter_mut() {
@@ -243,14 +246,14 @@ pub fn handle_new_node(
                     *v = Visibility::Visible;
                 }
 
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::Hide(_, _) => {
-                ew_hide_image_node.send(EventHideImageNode {});
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_hide_image_node.write(EventHideImageNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::Label(_, _, _, _) => {
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::GameMechanic(_, _) => {
                 // ew_event_switch_next_node.send(EventSwitchNextNode {});
@@ -261,12 +264,12 @@ pub fn handle_new_node(
             AST::Play(_, mode, filename) => {
                 let audio_mode = AudioMode::from_str(&mode).unwrap();
 
-                ew_play_audio.send(EventPlayAudio {
+                ew_play_audio.write(EventPlayAudio {
                     filename,
                     audio_mode,
                 });
 
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
             AST::Say(_, who, what) => {
                 for (_, _, mut text, _) in queries.p2().iter_mut() {
@@ -277,10 +280,10 @@ pub fn handle_new_node(
                     *text = TextSpan::new(who.clone().unwrap_or_default());
                 }
 
-                ew_show_text_node.send(EventShowTextNode {});
+                ew_show_text_node.write(EventShowTextNode {});
             }
             _ => {
-                ew_event_switch_next_node.send(EventSwitchNextNode {});
+                ew_event_switch_next_node.write(EventSwitchNextNode {});
             }
         }
     }
@@ -302,7 +305,7 @@ pub fn scale_images(
         if let Some(image) = images.get(&image_handle) {
             let sprite_height = image.height();
 
-            let window = windows.get_single();
+            let window = windows.single();
             if window.is_err() {
                 return;
             }
@@ -326,7 +329,7 @@ pub fn scale_images(
         if let Some(image) = images.get(&image_handle) {
             let sprite_height = image.height();
 
-            let window = windows.get_single();
+            let window = windows.single();
             if window.is_err() {
                 return;
             }
@@ -355,7 +358,7 @@ pub fn handle_press_key(
     }
 
     if keys.just_pressed(KeyCode::Space) {
-        ew_switch_next_node.send(EventSwitchNextNode {});
+        ew_switch_next_node.write(EventSwitchNextNode {});
     }
 }
 

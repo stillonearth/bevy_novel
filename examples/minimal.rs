@@ -1,13 +1,18 @@
 use bevy::{input::common_conditions::input_toggle_active, prelude::*};
 use bevy_defer::AsyncPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
+use bevy_kira_audio::AudioPlugin;
 use bevy_novel::{events::EventStartScenario, rpy_asset_loader::Rpy, NovelPlugin};
 
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
+            AudioPlugin,
             AsyncPlugin::default_settings(),
+            EguiPlugin {
+                enable_multipass_for_primary_context: true,
+            },
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
         ))
         .add_plugins(NovelPlugin {})
@@ -36,7 +41,7 @@ fn start_visual_novel(
     mut state: ResMut<NextState<AppState>>,
 ) {
     if let Some(rpy) = rpy_assets.get(scenario.id()) {
-        ew_start_scenario.send(EventStartScenario { ast: rpy.0.clone() });
+        ew_start_scenario.write(EventStartScenario { ast: rpy.0.clone() });
         state.set(AppState::Novel);
     }
 }

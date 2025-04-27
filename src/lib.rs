@@ -145,7 +145,6 @@ impl Plugin for NovelPlugin {
                     handle_show_image_node,
                     handle_hide_text_node,
                     handle_show_text_node,
-                    apply_deferred,
                     handle_press_key,
                     handle_play_audio,
                     scale_images,
@@ -212,27 +211,22 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
                 ..default()
             },
             Name::new("Novel Text"),
+            TextLayout::new_with_justify(JustifyText::Left),
         ))
         .with_children(|p| {
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWho {},
                 Name::new("Novel Text Who"),
-                TextLayout::new_with_justify(JustifyText::Left),
                 Visibility::Visible,
             ));
 
-            p.spawn((
-                TextSpan::new("\n"),
-                Name::new("Novel Text Newline"),
-                TextLayout::new_with_justify(JustifyText::Left),
-            ));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
 
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWhat {},
                 Name::new("Novel Text What"),
-                TextLayout::new_with_justify(JustifyText::Left),
                 Visibility::Visible,
             ));
         });
