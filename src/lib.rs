@@ -174,9 +174,9 @@ impl Plugin for NovelPlugin {
 
 fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
     commands.spawn((
-        Name::new("Character Image"),
+        Name::new("Background Image"),
         Sprite::default(),
-        NovelImage {},
+        NovelBackground {},
         ZIndex(1),
         Node {
             position_type: PositionType::Absolute,
@@ -186,10 +186,11 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         },
         Visibility::Hidden,
     ));
+
     commands.spawn((
-        Name::new("Background Image"),
+        Name::new("Character Image"),
         Sprite::default(),
-        NovelBackground {},
+        NovelImage {},
         ZIndex(2),
         Node {
             position_type: PositionType::Absolute,
