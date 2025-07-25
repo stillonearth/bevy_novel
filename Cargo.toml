@@ -1,7 +1,7 @@
 [package]
 edition = "2021"
 name = "bevy_novel"
-version = "0.16.0"
+version = "0.16.1"
 license = "MIT OR Apache-2.0"
 description = "Visual Novels with Bevy"
 keywords = ["visual-novel", "renpy", "rpy", "bevy", "scenario"]

@@ -40,7 +40,10 @@ pub struct EventStartScenario {
 }
 
 #[derive(Clone, Event)]
-pub struct EventSwitchNextNode {}
+pub struct EventSwitchNextNode;
+
+#[derive(Clone, Event)]
+pub struct EventNovelEnd;
 
 #[derive(Clone, Event)]
 pub struct EventHandleNode {
@@ -139,6 +142,7 @@ pub fn handle_switch_next_node(
     mut novel_data: ResMut<NovelData>,
     mut er_event_switch_next_node: EventReader<EventSwitchNextNode>,
     mut ew_handle_node: EventWriter<EventHandleNode>,
+    mut ew_novel_end: EventWriter<EventNovelEnd>,
 ) {
     let mut switched = false;
 
@@ -152,6 +156,7 @@ pub fn handle_switch_next_node(
 
             if next_index > max_index {
                 switched = true;
+                ew_novel_end.write(EventNovelEnd {});
                 continue;
             }
 
@@ -174,7 +179,7 @@ pub fn handle_switch_next_node(
                     _ => None,
                 };
 
-                if next_element.is_some() && next_element.is_some() {
+                if next_element.is_some() {
                     ew_handle_node.write(EventHandleNode {
                         ast: next_element.unwrap().clone(),
                     });

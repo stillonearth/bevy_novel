@@ -11,7 +11,7 @@ use renpy_parser::parsers::{inject_node, AST};
 use events::*;
 
 #[derive(Component)]
-pub struct NovelBackground {}
+pub struct NovelBackground;
 
 #[derive(Component)]
 pub struct NovelImage;
@@ -141,10 +141,8 @@ impl Plugin for NovelPlugin {
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
-                    handle_hide_image_node,
-                    handle_show_image_node,
-                    handle_hide_text_node,
-                    handle_show_text_node,
+                    (handle_hide_image_node, handle_hide_text_node).chain(),
+                    (handle_show_image_node, handle_show_text_node).chain(),
                     handle_press_key,
                     handle_play_audio,
                     scale_images,
@@ -164,6 +162,7 @@ impl Plugin for NovelPlugin {
             .add_event::<EventShowTextNode>()
             .add_event::<EventStartScenario>()
             .add_event::<EventSwitchNextNode>()
+            .add_event::<EventNovelEnd>()
             .init_resource::<NovelData>()
             .insert_resource(MusicHandle(None))
             .insert_resource(NovelSettings::default())
@@ -173,34 +172,6 @@ impl Plugin for NovelPlugin {
 }
 
 fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
-    commands.spawn((
-        Name::new("Background Image"),
-        Sprite::default(),
-        NovelBackground {},
-        ZIndex(1),
-        Node {
-            position_type: PositionType::Absolute,
-            width: Val::Auto,
-            height: Val::Auto,
-            ..default()
-        },
-        Visibility::Hidden,
-    ));
-
-    commands.spawn((
-        Name::new("Character Image"),
-        Sprite::default(),
-        NovelImage {},
-        ZIndex(2),
-        Node {
-            position_type: PositionType::Absolute,
-            width: Val::Auto,
-            height: Val::Auto,
-            ..default()
-        },
-        Visibility::Hidden,
-    ));
-
     commands
         .spawn((
             Text::default(),
@@ -212,6 +183,8 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
                 ..default()
             },
             Name::new("Novel Text"),
+            Visibility::Hidden,
+            ZIndex(2),
             TextLayout::new_with_justify(JustifyText::Left),
         ))
         .with_children(|p| {
@@ -231,6 +204,33 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
                 Visibility::Visible,
             ));
         });
+
+    commands.spawn((
+        Name::new("Background Image"),
+        Sprite::default(),
+        NovelBackground,
+        Node {
+            position_type: PositionType::Absolute,
+            width: Val::Auto,
+            height: Val::Auto,
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
+
+    commands.spawn((
+        Name::new("Character Image"),
+        Sprite::default(),
+        NovelImage,
+        ZIndex(2),
+        Node {
+            position_type: PositionType::Absolute,
+            width: Val::Auto,
+            height: Val::Auto,
+            ..default()
+        },
+        Visibility::Hidden,
+    ));
 }
 
 pub fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
