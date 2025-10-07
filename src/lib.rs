@@ -1,4 +1,4 @@
-pub mod events;
+pub mod messages;
 pub mod rpy_asset_loader;
 
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use bevy_kira_audio::prelude::*;
 
 use renpy_parser::parsers::{inject_node, AST};
 
-use events::*;
+use messages::*;
 
 #[derive(Component)]
 pub struct NovelBackground;
@@ -149,20 +149,20 @@ impl Plugin for NovelPlugin {
                 )
                     .chain(),
             )
-            .add_event::<EventHandleNode>()
-            .add_event::<EventHideImageNode>()
-            .add_event::<EventHideTextNode>()
-            .add_event::<EventJump>()
-            .add_event::<EventLabel>()
-            .add_event::<EventPlayAudio>()
-            .add_event::<EventReturn>()
-            .add_event::<EventSay>()
-            .add_event::<EventShow>()
-            .add_event::<EventShowImageNode>()
-            .add_event::<EventShowTextNode>()
-            .add_event::<EventStartScenario>()
-            .add_event::<EventSwitchNextNode>()
-            .add_event::<EventNovelEnd>()
+            .add_message::<EventHandleNode>()
+            .add_message::<EventHideImageNode>()
+            .add_message::<EventHideTextNode>()
+            .add_message::<EventJump>()
+            .add_message::<EventLabel>()
+            .add_message::<EventPlayAudio>()
+            .add_message::<EventReturn>()
+            .add_message::<EventSay>()
+            .add_message::<EventShow>()
+            .add_message::<EventShowImageNode>()
+            .add_message::<EventShowTextNode>()
+            .add_message::<EventStartScenario>()
+            .add_message::<EventSwitchNextNode>()
+            .add_message::<EventNovelEnd>()
             .init_resource::<NovelData>()
             .insert_resource(MusicHandle(None))
             .insert_resource(NovelSettings::default())
@@ -184,8 +184,8 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
             },
             Name::new("Novel Text"),
             Visibility::Hidden,
-            ZIndex(2),
-            TextLayout::new_with_justify(JustifyText::Left),
+            ZIndex(10),
+            TextLayout::new_with_justify(Justify::Left),
         ))
         .with_children(|p| {
             p.spawn((

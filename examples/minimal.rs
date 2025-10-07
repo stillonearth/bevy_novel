@@ -2,7 +2,7 @@ use bevy::{input::common_conditions::input_toggle_active, prelude::*};
 use bevy_defer::AsyncPlugin;
 use bevy_inspector_egui::{bevy_egui::EguiPlugin, quick::WorldInspectorPlugin};
 use bevy_kira_audio::AudioPlugin;
-use bevy_novel::{events::EventStartScenario, rpy_asset_loader::Rpy, NovelPlugin};
+use bevy_novel::{messages::EventStartScenario, rpy_asset_loader::Rpy, NovelPlugin};
 
 fn main() {
     App::new()
@@ -10,9 +10,7 @@ fn main() {
             DefaultPlugins,
             AudioPlugin,
             AsyncPlugin::default_settings(),
-            EguiPlugin {
-                enable_multipass_for_primary_context: true,
-            },
+            EguiPlugin { ..default() },
             WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
         ))
         .add_plugins(NovelPlugin {})

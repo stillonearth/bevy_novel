@@ -1,14 +1,14 @@
 [package]
 edition = "2021"
 name = "bevy_novel"
-version = "0.16.1"
+version = "0.17.0"
 license = "MIT OR Apache-2.0"
 description = "Visual Novels with Bevy"
 keywords = ["visual-novel", "renpy", "rpy", "bevy", "scenario"]
 repository = "https://github.com/stillonearth/bevy_novel"
 
 [dependencies]
-bevy = { version = "0.16", default-features = false, features = [
+bevy = { version = "0.17", default-features = false, features = [
     "bevy_animation",
     "bevy_asset",
     "bevy_color",
@@ -34,13 +34,13 @@ bevy = { version = "0.16", default-features = false, features = [
 ] }
 regex = "1.11.1"
 renpy_parser = "0.0.13"
-bevy_kira_audio = { version = "0.23", features = ["ogg", "mp3", "wav"] }
+bevy_kira_audio = { version = "0.24", features = ["ogg", "mp3", "wav"] }
 thiserror = "2.0"
 serde = "1.0"
-bevy_defer = "0.14"
+bevy_defer = "0.15"
 
 [dev-dependencies]
-bevy-inspector-egui = "0.31.0"
+bevy-inspector-egui = "0.34.0"
 
 [profile.dev]
 opt-level = 3
