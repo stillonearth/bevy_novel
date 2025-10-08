@@ -188,27 +188,6 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
             TextLayout::new_with_justify(Justify::Left),
         ))
         .with_children(|p| {
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
-
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWho {},
