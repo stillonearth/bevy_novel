@@ -174,33 +174,34 @@ impl Plugin for NovelPlugin {
 fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
     commands
         .spawn((
-            Text::default(),
+            Text2d::default(),
             NovelText,
             Node {
+                // width: percent(100),
                 position_type: PositionType::Absolute,
+                // display: Display::Flex,
+                // align_items: AlignItems::End,
+                // height: percent(100),
                 bottom: Val::Px(20.0),
-                left: Val::Px(20.0),
                 ..default()
             },
             Name::new("Novel Text"),
-            Visibility::Hidden,
-            // ZIndex(10),
+            // Visibility::Hidden,
+            ZIndex(10),
             TextLayout::new_with_justify(Justify::Left),
         ))
         .with_children(|p| {
             p.spawn((
-                Text2d::new(""),
-                // TextBounds::from(box_size),
+                TextSpan::new(""),
                 NovelTextWho {},
-                Transform::from_translation(Vec3::Z),
                 Name::new("Novel Text Who"),
                 Visibility::Visible,
             ));
 
-            p.spawn((Text2d::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
 
             p.spawn((
-                Text2d::new(""),
+                TextSpan::new(""),
                 NovelTextWhat {},
                 Name::new("Novel Text What"),
                 Transform::from_translation(Vec3::Z),

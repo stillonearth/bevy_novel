@@ -11,7 +11,7 @@ fn main() {
             AudioPlugin,
             AsyncPlugin::default_settings(),
             EguiPlugin { ..default() },
-            WorldInspectorPlugin::default().run_if(input_toggle_active(false, KeyCode::Escape)),
+            WorldInspectorPlugin::new().run_if(input_toggle_active(false, KeyCode::Escape)),
         ))
         .add_plugins(NovelPlugin {})
         .init_state::<AppState>()
