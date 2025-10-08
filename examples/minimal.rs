@@ -33,7 +33,7 @@ fn setup_camera(mut cmd: Commands) {
 }
 
 fn start_visual_novel(
-    mut ew_start_scenario: EventWriter<EventStartScenario>,
+    mut ew_start_scenario: MessageWriter<EventStartScenario>,
     scenario: Res<ScenarioHandle>,
     rpy_assets: Res<Assets<Rpy>>,
     mut state: ResMut<NextState<AppState>>,

@@ -176,14 +176,8 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         .spawn((
             Text2d::default(),
             NovelText,
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: px(5),
-                left: px(15),
-                ..default()
-            },
+            Transform::from_translation(Vec3::new(-450.0, -300.0, 0.0)),
             Name::new("Novel Text"),
-            // Visibility::Hidden,
             ZIndex(10),
             TextLayout::new_with_justify(Justify::Left),
         ))
