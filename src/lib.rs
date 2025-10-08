@@ -177,12 +177,9 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
             Text2d::default(),
             NovelText,
             Node {
-                // width: percent(100),
                 position_type: PositionType::Absolute,
-                // display: Display::Flex,
-                // align_items: AlignItems::End,
-                // height: percent(100),
-                bottom: Val::Px(20.0),
+                bottom: px(5),
+                left: px(15),
                 ..default()
             },
             Name::new("Novel Text"),
@@ -191,6 +188,27 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
             TextLayout::new_with_justify(Justify::Left),
         ))
         .with_children(|p| {
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+
             p.spawn((
                 TextSpan::new(""),
                 NovelTextWho {},
