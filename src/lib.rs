@@ -184,23 +184,26 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
             },
             Name::new("Novel Text"),
             Visibility::Hidden,
-            ZIndex(10),
+            // ZIndex(10),
             TextLayout::new_with_justify(Justify::Left),
         ))
         .with_children(|p| {
             p.spawn((
-                TextSpan::new(""),
+                Text2d::new(""),
+                // TextBounds::from(box_size),
                 NovelTextWho {},
+                Transform::from_translation(Vec3::Z),
                 Name::new("Novel Text Who"),
                 Visibility::Visible,
             ));
 
-            p.spawn((TextSpan::new("\n"), Name::new("Novel Text Newline")));
+            p.spawn((Text2d::new("\n"), Name::new("Novel Text Newline")));
 
             p.spawn((
-                TextSpan::new(""),
+                Text2d::new(""),
                 NovelTextWhat {},
                 Name::new("Novel Text What"),
+                Transform::from_translation(Vec3::Z),
                 Visibility::Visible,
             ));
         });
@@ -222,7 +225,7 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         Name::new("Character Image"),
         Sprite::default(),
         NovelImage,
-        ZIndex(2),
+        // ZIndex(2),
         Node {
             position_type: PositionType::Absolute,
             width: Val::Auto,
