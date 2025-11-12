@@ -1,5 +1,5 @@
 [package]
-edition = "2021"
+edition = "2024"
 name = "bevy_novel"
 version = "0.17.0"
 license = "MIT OR Apache-2.0"
@@ -22,6 +22,7 @@ bevy = { version = "0.17", default-features = false, features = [
     "bevy_winit",
 
     "std",
+    "reflect_auto_register",
     "animation",
     "default_font",
     "jpeg",

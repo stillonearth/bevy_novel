@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy_kira_audio::prelude::*;
 
-use renpy_parser::parsers::{inject_node, AST};
+use renpy_parser::parsers::{AST, inject_node};
 
 use messages::*;
 
@@ -138,6 +138,7 @@ impl Plugin for NovelPlugin {
             .add_systems(
                 Update,
                 (
+                    adjust_text_position,
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
@@ -176,10 +177,10 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         .spawn((
             Text2d::default(),
             NovelText,
-            Transform::from_translation(Vec3::new(-450.0, -300.0, 0.0)),
             Name::new("Novel Text"),
             ZIndex(10),
-            TextLayout::new_with_justify(Justify::Left),
+            Transform::from_translation(Vec3::Z),
+            TextLayout::new(Justify::Left, LineBreak::WordBoundary),
         ))
         .with_children(|p| {
             p.spawn((
@@ -226,6 +227,18 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         },
         Visibility::Hidden,
     ));
+}
+
+fn adjust_text_position(
+    mut windows: Query<&Window>,
+    mut q_novel_text: Query<(Entity, &mut Transform, &NovelText)>,
+) {
+    let window = windows.single_mut().unwrap(); // Get window
+
+    for (_, mut transform, _) in q_novel_text.iter_mut() {
+        transform.translation.y = -window.resolution.height() / 2.0 + 50.0;
+        transform.translation.x = -window.resolution.width() / 3.0 + 50.0;
+    }
 }
 
 pub fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
