@@ -1,11 +1,11 @@
 use bevy::{
-    asset::{io::Reader, AssetLoader, LoadContext},
+    asset::{AssetLoader, LoadContext, io::Reader},
     prelude::*,
 };
 use renpy_parser::{parse_scenario_from_string, parsers::AST};
 use thiserror::Error;
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct RpyAssetLoader;
 
 #[derive(Asset, TypePath, Debug, Deref, DerefMut)]

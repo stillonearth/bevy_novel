@@ -1,29 +1,18 @@
 [package]
 edition = "2024"
 name = "bevy_novel"
-version = "0.17.1"
+version = "0.18.0"
 license = "MIT OR Apache-2.0"
 description = "Visual Novels with Bevy"
 keywords = ["visual-novel", "renpy", "rpy", "bevy", "scenario"]
 repository = "https://github.com/stillonearth/bevy_novel"
 
 [dependencies]
-bevy = { version = "0.17", default-features = false, features = [
-    "bevy_animation",
-    "bevy_asset",
-    "bevy_color",
-    "bevy_core_pipeline",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite",
-    "bevy_state",
-    "bevy_ui",
-    "bevy_window",
-    "bevy_winit",
+bevy = { version = "0.18", default-features = false, features = [
+    "2d",
 
     "std",
     "reflect_auto_register",
-    "animation",
     "default_font",
     "jpeg",
     "multi_threaded",
@@ -35,13 +24,13 @@ bevy = { version = "0.17", default-features = false, features = [
 ] }
 regex = "1.11.1"
 renpy_parser = "0.0.13"
-bevy_kira_audio = { version = "0.24", features = ["ogg", "mp3", "wav"] }
+bevy_kira_audio = { version = "0.25", features = ["ogg", "mp3", "wav"] }
 thiserror = "2.0"
 serde = "1.0"
-bevy_defer = "0.15"
+bevy_defer = "0.17"
 
 [dev-dependencies]
-bevy-inspector-egui = { git = "https://github.com/jakobhellermann/bevy-inspector-egui.git", rev="2e9f7eb" }  #"0.34.0"
+bevy-inspector-egui = "0.36"
 
 [profile.dev]
 opt-level = 3

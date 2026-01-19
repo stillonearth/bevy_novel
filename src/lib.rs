@@ -130,6 +130,7 @@ impl NovelData {
 pub struct NovelSettings {
     pub assets_path: String,
     pub pause_handle_switch_node: bool,
+    pub text_position: Option<(f32, f32)>,
 }
 
 impl Plugin for NovelPlugin {
@@ -138,7 +139,6 @@ impl Plugin for NovelPlugin {
             .add_systems(
                 Update,
                 (
-                    adjust_text_position,
                     handle_start_scenario,
                     handle_switch_next_node,
                     handle_new_node,
@@ -175,12 +175,15 @@ impl Plugin for NovelPlugin {
 fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
     commands
         .spawn((
-            Text2d::default(),
             NovelText,
             Name::new("Novel Text"),
-            ZIndex(10),
-            Transform::from_translation(Vec3::Z),
-            TextLayout::new(Justify::Left, LineBreak::WordBoundary),
+            Text::new(""),
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: px(5),
+                left: px(15),
+                ..default()
+            },
         ))
         .with_children(|p| {
             p.spawn((
@@ -227,18 +230,6 @@ fn setup(mut commands: Commands, _novel_settings: Res<NovelSettings>) {
         },
         Visibility::Hidden,
     ));
-}
-
-fn adjust_text_position(
-    mut windows: Query<&Window>,
-    mut q_novel_text: Query<(Entity, &mut Transform, &NovelText)>,
-) {
-    let window = windows.single_mut().unwrap(); // Get window
-
-    for (_, mut transform, _) in q_novel_text.iter_mut() {
-        transform.translation.y = -window.resolution.height() / 2.0 + 50.0;
-        transform.translation.x = -window.resolution.width() / 3.0 + 50.0;
-    }
 }
 
 pub fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
