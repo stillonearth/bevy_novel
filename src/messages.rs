@@ -7,8 +7,8 @@ use renpy_parser::parsers::AST;
 use bevy_kira_audio::prelude::*;
 
 use crate::{
-    find_element_with_index, list_ast_indices, MusicHandle, NovelBackground, NovelData, NovelImage,
-    NovelSettings, NovelText, NovelTextWhat, NovelTextWho,
+    MusicHandle, NovelBackground, NovelData, NovelImage, NovelSettings, NovelText, NovelTextWhat,
+    NovelTextWho, find_element_with_index, list_ast_indices,
 };
 
 #[derive(Clone, Message)]
@@ -100,7 +100,7 @@ pub struct EventHideImageNode {}
 pub fn handle_play_audio(
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
-    music_handle: Res<MusicHandle>,
+    music_handle: ResMut<MusicHandle>,
     mut audio_instances: ResMut<Assets<AudioInstance>>,
     mut commands: Commands,
     mut er_play_audio: MessageReader<EventPlayAudio>,
@@ -115,7 +115,7 @@ pub fn handle_play_audio(
 
         if event.audio_mode == AudioMode::Music {
             if let Some(handle) = music_handle.clone().0 {
-                if let Some(instance) = audio_instances.get_mut(&handle) {
+                if let Some(mut instance) = audio_instances.get_mut(&handle) {
                     instance.stop(AudioTween::default());
                 }
             }

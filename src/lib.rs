@@ -248,6 +248,8 @@ pub fn find_element_with_index(ast: Vec<AST>, index: usize) -> Option<AST> {
             AST::GameMechanic(i, _) => *i,
             AST::LLMGenerate(i, _, _) => *i,
             AST::Comment(i, _) => *i,
+            AST::SceneGenerate(i, _) => *i,
+            AST::MusicGenerate(i, _) => *i,
             AST::Error => panic!(),
         };
 
@@ -276,6 +278,8 @@ fn list_ast_indices(ast: Vec<AST>) -> Vec<usize> {
             AST::GameMechanic(i, _) => *i,
             AST::LLMGenerate(i, _, _) => *i,
             AST::Comment(i, _) => *i,
+            AST::SceneGenerate(i, _) => *i,
+            AST::MusicGenerate(i, _) => *i,
             AST::Error => panic!(),
         })
         .collect();
